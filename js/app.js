@@ -1,68 +1,60 @@
 /* ═══════════════════════════════════════════════════
    TEA SPILL ☕ — Main Application Router
+   SPA navigation, page switching, delegated events.
    ═══════════════════════════════════════════════════ */
+
+'use strict';
 
 const App = {
   currentPage: 'feed',
   previousPage: 'feed',
+  history: [],
 
   async init() {
-    // Wait for splash animation
+    // Splash screen
     setTimeout(() => {
-      document.getElementById('splash-screen').classList.add('hidden');
+      const splash = document.getElementById('splash-screen');
+      if (splash) splash.classList.add('hidden');
     }, 1800);
 
-    // Initialize user (creates default if none)
+    // Initialize user
     const user = Storage.getUser();
     Storage.saveUser(user);
 
-    // Load 350+ colleges from JSON
+    // Load full college database
     await Storage.loadCollegesJSON();
 
-    // Initialize modules
+    // Initialize spill module
     Spill.init();
     this._updateSidebarProfile();
-
-    // Bind navigation
     this._bindNavigation();
 
-    // Render default page
+    // Default page
     this.navigate('feed');
   },
 
+  /**
+   * Navigate to a page with optional data payload.
+   * @param {string} page
+   * @param {*} [data]
+   */
   navigate(page, data) {
+    this.history.push({ page: this.currentPage, data: null });
     this.previousPage = this.currentPage;
     this.currentPage = page;
 
-    // Render the right page
     switch (page) {
-      case 'feed':
-        Feed.render();
-        break;
-      case 'explore':
-        Explore.render();
-        break;
-      case 'colleges':
-        College.render();
-        break;
+      case 'feed':       Feed.render();             break;
+      case 'explore':    Explore.render();           break;
+      case 'colleges':   College.render();           break;
       case 'college-detail':
         College.renderDetail(data);
-        return; // renderDetail handles page activation
-      case 'pages':
-        Pages.renderPages();
-        break;
-      case 'groups':
-        Pages.renderGroups();
-        break;
-      case 'channels':
-        Pages.renderChannels();
-        break;
-      case 'profile':
-        Profile.render();
-        break;
-      case 'reader':
-        Reader.render(data);
-        break;
+        return; // renderDetail manages page activation
+      case 'pages':      Pages.renderPages();        break;
+      case 'groups':     Pages.renderGroups();        break;
+      case 'channels':   Pages.renderChannels();      break;
+      case 'profile':    Profile.render();           break;
+      case 'reader':     Reader.render(data);        break;
       default:
         Feed.render();
         page = 'feed';
@@ -72,24 +64,33 @@ const App = {
     this._setActiveNav(page);
 
     // Close sidebar on mobile
-    document.getElementById('sidebar').classList.remove('open');
+    const sidebar = document.getElementById('sidebar');
+    if (sidebar) sidebar.classList.remove('open');
 
     // Scroll to top
-    window.scrollTo(0, 0);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   },
 
+  /** Go back to the previous page. */
   goBack() {
-    this.navigate(this.previousPage);
+    const prev = this.history.pop();
+    if (prev) {
+      this.navigate(prev.page, prev.data);
+    } else {
+      this.navigate('feed');
+    }
   },
 
+  /** Show a page container by ID. */
   _showPage(page) {
     document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
     const target = document.getElementById('page-' + page);
     if (target) target.classList.add('active');
   },
 
+  /** Highlight the active nav link. */
   _setActiveNav(page) {
-    // Sidebar
+    // Sidebar links
     document.querySelectorAll('.sidebar-nav .nav-link').forEach(l => l.classList.remove('active'));
     const sidebarLink = document.getElementById('nav-' + page);
     if (sidebarLink) sidebarLink.classList.add('active');
@@ -99,25 +100,27 @@ const App = {
     const bnav = document.getElementById('bnav-' + page);
     if (bnav) bnav.classList.add('active');
 
-    // Profile link
-    if (page === 'profile') {
-      document.querySelector('.profile-link')?.classList.add('active');
-    } else {
-      document.querySelector('.profile-link')?.classList.remove('active');
-    }
+    // Profile
+    const profileLink = document.querySelector('.profile-link');
+    if (profileLink) profileLink.classList.toggle('active', page === 'profile');
   },
 
+  /** Update the sidebar profile card with current user data. */
   _updateSidebarProfile() {
     const user = Storage.getUser();
-    document.getElementById('sidebar-avatar').textContent = user.aliasEmoji;
-    document.getElementById('sidebar-username').textContent = user.alias;
-    document.getElementById('sidebar-points').textContent = user.teaPoints + ' 🍵';
+    const avatarEl = document.getElementById('sidebar-avatar');
+    const nameEl = document.getElementById('sidebar-username');
+    const pointsEl = document.getElementById('sidebar-points');
+    if (avatarEl) avatarEl.textContent = user.aliasEmoji;
+    if (nameEl) nameEl.textContent = user.alias;
+    if (pointsEl) pointsEl.textContent = user.teaPoints + ' 🍵';
   },
 
+  /** Bind global navigation events using event delegation. */
   _bindNavigation() {
-    // All elements with data-navigate
+    // Delegated click handler
     document.addEventListener('click', (e) => {
-      // Navigation links
+      // [data-navigate] links
       const navEl = e.target.closest('[data-navigate]');
       if (navEl) {
         e.preventDefault();
@@ -125,7 +128,7 @@ const App = {
         return;
       }
 
-      // New spill actions
+      // [data-action="new-spill"] buttons
       const spillAction = e.target.closest('[data-action="new-spill"]');
       if (spillAction) {
         e.preventDefault();
@@ -135,31 +138,37 @@ const App = {
     });
 
     // Mobile menu toggle
-    document.getElementById('btn-menu').addEventListener('click', () => {
-      document.getElementById('sidebar').classList.toggle('open');
-    });
+    const menuBtn = document.getElementById('btn-menu');
+    if (menuBtn) {
+      menuBtn.addEventListener('click', () => {
+        document.getElementById('sidebar').classList.toggle('open');
+      });
+    }
 
-    // Close sidebar on outside click (mobile)
+    // Close sidebar on outside click
     document.addEventListener('click', (e) => {
       const sidebar = document.getElementById('sidebar');
       const menuBtn = document.getElementById('btn-menu');
-      if (sidebar.classList.contains('open') &&
+      if (sidebar && menuBtn &&
+          sidebar.classList.contains('open') &&
           !sidebar.contains(e.target) &&
           !menuBtn.contains(e.target)) {
         sidebar.classList.remove('open');
       }
     });
 
-    // Keyboard shortcut: Escape to close modal
+    // Escape → close modals
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') {
         Spill.close();
+        const reportModal = document.getElementById('report-modal');
+        if (reportModal) reportModal.classList.add('hidden');
+        const shareModal = document.getElementById('share-modal');
+        if (shareModal) shareModal.classList.add('hidden');
       }
     });
   }
 };
 
-// ─── Boot ───
-document.addEventListener('DOMContentLoaded', () => {
-  App.init();
-});
+/* ─── Boot ─── */
+document.addEventListener('DOMContentLoaded', () => App.init());

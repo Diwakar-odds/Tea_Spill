@@ -275,18 +275,51 @@ const MOCK_PAGES = [
 
 // Mock groups data
 const MOCK_GROUPS = [
-  { id: "g1", name: "2025 Batch — VIT Vellore", icon: "🎓", desc: "Official group for the 2025 graduating batch. Spill responsibly!", members: 3400, type: "public" },
-  { id: "g2", name: "IIT Bombay Confidential", icon: "🤫", desc: "What happens in IIT-B stays in IIT-B. Unless it's spilled here.", members: 1200, type: "private" },
-  { id: "g3", name: "Night Owls Study Group", icon: "🦉", desc: "For those who peak at 3 AM. Share resources, cry together, repeat.", members: 8900, type: "public" },
-  { id: "g4", name: "Startup Gossip India", icon: "🚀", desc: "Who's funding who? Which startup is secretly failing? We know.", members: 5600, type: "public" },
-  { id: "g5", name: "Girls Hostel Chronicles", icon: "💅", desc: "The untold stories from girls hostels across India.", members: 15200, type: "private" },
-  { id: "g6", name: "BITS Pilani Underground", icon: "🕳️", desc: "The real BITS experience they don't put in the brochure.", members: 2100, type: "secret" }
+  { id: "g1", name: "2025 Batch — VIT Vellore", icon: "🎓", desc: "Official group for the 2025 graduating batch. Spill responsibly!", members: 3400, type: "public",
+    messages: [
+      { alias: "Neon Tiger", emoji: "🐱", body: "Anyone else stressed about placements starting next week? 😭", time: "2h ago" },
+      { alias: "Shadow Fox", emoji: "🦊", body: "Bro same. My resume is still a work in progress lol", time: "1h ago" },
+      { alias: "Crystal Owl", emoji: "🦉", body: "Pro tip: update your LinkedIn before the placement cell checks", time: "45m ago" }
+    ]},
+  { id: "g2", name: "IIT Bombay Confidential", icon: "🤫", desc: "What happens in IIT-B stays in IIT-B. Unless it's spilled here.", members: 1200, type: "private",
+    messages: [
+      { alias: "Midnight Ghost", emoji: "👻", body: "Did you guys hear about the new hostel rules?", time: "5h ago" },
+      { alias: "Electric Eagle", emoji: "🦅", body: "Yeah they're banning cooking after 11 PM apparently", time: "4h ago" }
+    ]},
+  { id: "g3", name: "Night Owls Study Group", icon: "🦉", desc: "For those who peak at 3 AM. Share resources, cry together, repeat.", members: 8900, type: "public",
+    messages: [
+      { alias: "Cosmic Storm", emoji: "⚡", body: "Anyone has notes for Linear Algebra? My prof skipped 3 chapters 🙃", time: "3h ago" },
+      { alias: "Turbo Dragon", emoji: "🐉", body: "Check the NPTEL playlist, saved my life last sem", time: "2h ago" },
+      { alias: "Velvet Phoenix", emoji: "🔮", body: "Currently pulling an all-nighter for DSA. The coffee has stopped working 💀", time: "30m ago" }
+    ]},
+  { id: "g4", name: "Startup Gossip India", icon: "🚀", desc: "Who's funding who? Which startup is secretly failing? We know.", members: 5600, type: "public",
+    messages: [
+      { alias: "Silent Ninja", emoji: "🥷", body: "Heard a certain edtech is laying off 200 people next month 👀", time: "6h ago" }
+    ]},
+  { id: "g5", name: "Girls Hostel Chronicles", icon: "💅", desc: "The untold stories from girls hostels across India.", members: 15200, type: "private",
+    messages: []},
+  { id: "g6", name: "BITS Pilani Underground", icon: "🕳️", desc: "The real BITS experience they don't put in the brochure.", members: 2100, type: "secret",
+    messages: []}
 ];
 
 // Mock channels data
 const MOCK_CHANNELS = [
-  { id: "c1", name: "Daily Tea Roundup ☕", icon: "📰", desc: "Your daily dose of the hottest campus tea from across India. Published every evening.", subscribers: 22400 },
-  { id: "c2", name: "Placement Alerts 🔔", icon: "💼", desc: "Real-time updates on placement drives, offers, and package reveals.", subscribers: 45600 },
-  { id: "c3", name: "Best of Tea Spill", icon: "🏆", desc: "Weekly compilation of the most viral, funniest, and most heartwarming spills.", subscribers: 34200 },
-  { id: "c4", name: "College News India", icon: "📢", desc: "Breaking news from Indian colleges — policy changes, events, controversies.", subscribers: 18900 }
+  { id: "c1", name: "Daily Tea Roundup ☕", icon: "📰", desc: "Your daily dose of the hottest campus tea from across India. Published every evening.", subscribers: 22400,
+    broadcasts: [
+      { title: "🍵 Evening Brew — April 9, 2026", body: "Today's hottest spills: A professor at IIT Bombay walked out mid-lecture for chai, VIT's hostel ghost turned out to be the warden sneaking biryani at 2AM, and someone at BITS submitted a love letter instead of their OS assignment. The TA graded it. Stay tuned for tomorrow's brew!", time: "6h ago" },
+      { title: "🍵 Evening Brew — April 8, 2026", body: "Yesterday's highlights: Manipal WiFi hack renamed to 'Mid Sem Answers Inside', entire IIT Kanpur batch bunked for World Cup Final (prof joined them), and Anna University students petition for library AC repair after 2 months of 42°C heat.", time: "1d ago" }
+    ]},
+  { id: "c2", name: "Placement Alerts 🔔", icon: "💼", desc: "Real-time updates on placement drives, offers, and package reveals.", subscribers: 45600,
+    broadcasts: [
+      { title: "🔔 Google — Summer Internship 2026", body: "Google is hiring summer interns for SWE roles. Eligible: Pre-final year CSE/IT students. CTC: ₹1.2L/month stipend. Apply before April 20. Coding test on April 25. Good luck!", time: "2h ago" },
+      { title: "🔔 Flipkart — SDE-1 Campus Drive", body: "Flipkart is visiting 15+ campuses this month for SDE-1 roles. Package: ₹24.5 LPA. Requirements: Strong DSA, System Design basics. Online test format: 3 coding questions in 90 mins.", time: "1d ago" }
+    ]},
+  { id: "c3", name: "Best of Tea Spill", icon: "🏆", desc: "Weekly compilation of the most viral, funniest, and most heartwarming spills.", subscribers: 34200,
+    broadcasts: [
+      { title: "🏆 Best of the Week — April 7-9", body: "This week's top-rated spills: 1. Love letter OS assignment (2.7K reactions) 2. Canteen uncle remembers order after 3 years (3.2K reactions) 3. Cricket World Cup class bunk (2.8K reactions). What a week for campus tea! ☕", time: "12h ago" }
+    ]},
+  { id: "c4", name: "College News India", icon: "📢", desc: "Breaking news from Indian colleges — policy changes, events, controversies.", subscribers: 18900,
+    broadcasts: [
+      { title: "📢 UGC announces new semester system changes", body: "The University Grants Commission has proposed restructuring the semester system for undergraduate programs. Key changes include continuous assessment replacing end-term exams for 40% of grades, mandatory internship credits, and flexible course selection across departments.", time: "3d ago" }
+    ]}
 ];

@@ -1,6 +1,10 @@
 /* ═══════════════════════════════════════════════════
    TEA SPILL ☕ — Feed Module
+   Home feed with sort, category filter,
+   daily challenge, and spill cards.
    ═══════════════════════════════════════════════════ */
+
+'use strict';
 
 const Feed = {
   currentSort: 'trending',
@@ -8,7 +12,6 @@ const Feed = {
 
   render() {
     const page = document.getElementById('page-feed');
-    const spills = Storage.getSpills();
     const challenge = Utils.dailyChallenge();
 
     page.innerHTML = `
@@ -26,17 +29,17 @@ const Feed = {
 
       <!-- Sort Tabs -->
       <div class="feed-tabs" id="feed-tabs">
-        <button class="feed-tab active" data-sort="trending">🔥 Trending</button>
-        <button class="feed-tab" data-sort="hot">🌶️ Hot</button>
-        <button class="feed-tab" data-sort="new">✨ New</button>
-        <button class="feed-tab" data-sort="top">🏆 Top</button>
+        <button class="feed-tab ${this.currentSort === 'trending' ? 'active' : ''}" data-sort="trending">🔥 Trending</button>
+        <button class="feed-tab ${this.currentSort === 'hot' ? 'active' : ''}" data-sort="hot">🌶️ Hot</button>
+        <button class="feed-tab ${this.currentSort === 'new' ? 'active' : ''}" data-sort="new">✨ New</button>
+        <button class="feed-tab ${this.currentSort === 'top' ? 'active' : ''}" data-sort="top">🏆 Top</button>
       </div>
 
       <!-- Category Filter -->
       <div class="feed-tabs" id="feed-category-filter">
-        <button class="feed-tab active" data-category="all">All</button>
+        <button class="feed-tab ${this.currentCategory === 'all' ? 'active' : ''}" data-category="all">All</button>
         ${CATEGORIES.map(c => `
-          <button class="feed-tab" data-category="${c.id}">${c.emoji} ${c.name}</button>
+          <button class="feed-tab ${this.currentCategory === c.id ? 'active' : ''}" data-category="${c.id}">${c.emoji} ${c.name}</button>
         `).join('')}
       </div>
 
@@ -50,6 +53,8 @@ const Feed = {
 
   _renderSpills() {
     const list = document.getElementById('feed-list');
+    if (!list) return;
+
     let spills = Storage.getSpills();
 
     // Apply filters
@@ -71,6 +76,11 @@ const Feed = {
     this._bindCards();
   },
 
+  /**
+   * Render a spill card. Used by Feed and other modules.
+   * @param {Object} spill
+   * @returns {string} HTML
+   */
   _spillCard(spill) {
     const college = Utils.getCollege(spill.collegeId);
     const category = Utils.getCategory(spill.category);
@@ -82,10 +92,10 @@ const Feed = {
       <article class="spill-card" data-spill-id="${spill.id}">
         <div class="spill-card-header">
           <div class="spill-meta">
-            <div class="spill-avatar">${spill.aliasEmoji}</div>
+            <div class="spill-avatar">${spill.aliasEmoji || '👻'}</div>
             <div>
               <div class="spill-author">${Utils.escapeHtml(spill.alias)}</div>
-              <div class="spill-time">${spill.timeAgo}${spill.selfDestruct ? ' · ⏱️ Self-destruct' : ''}</div>
+              <div class="spill-time">${spill.timeAgo || 'Just now'}${spill.selfDestruct ? ' · ⏱️' : ''}</div>
             </div>
           </div>
           <div class="spill-temp ${temp.class}">${temp.label}</div>
@@ -103,7 +113,7 @@ const Feed = {
                     data-reaction="${r.id}" data-spill="${spill.id}"
                     onclick="event.stopPropagation(); Feed.react('${spill.id}','${r.id}')">
               <span>${r.emoji}</span>
-              <span>${Utils.formatNumber(spill.reactions[r.id] || 0)}</span>
+              <span>${Utils.formatNumber(spill.reactions?.[r.id] || 0)}</span>
             </button>
           `).join('')}
           <button class="reaction-btn" onclick="event.stopPropagation(); App.navigate('reader', '${spill.id}')">
@@ -115,6 +125,11 @@ const Feed = {
     `;
   },
 
+  /**
+   * Toggle a reaction on a spill.
+   * @param {string} spillId
+   * @param {string} reactionId
+   */
   react(spillId, reactionId) {
     const user = Storage.getUser();
     if (!user.myReactions) user.myReactions = {};
@@ -123,14 +138,13 @@ const Feed = {
     const spills = Storage.getSpills();
     const spill = spills.find(s => s.id === spillId);
     if (!spill) return;
+    if (!spill.reactions) spill.reactions = {};
 
     const idx = user.myReactions[spillId].indexOf(reactionId);
     if (idx > -1) {
-      // Un-react
       user.myReactions[spillId].splice(idx, 1);
       spill.reactions[reactionId] = Math.max(0, (spill.reactions[reactionId] || 1) - 1);
     } else {
-      // React
       user.myReactions[spillId].push(reactionId);
       spill.reactions[reactionId] = (spill.reactions[reactionId] || 0) + 1;
       user.teaPoints += 1;
@@ -139,24 +153,27 @@ const Feed = {
 
     Storage.saveUser(user);
     Storage.saveSpills(spills);
-    this._renderSpills();
+
+    // Re-render only on feed page to avoid flash on reader
+    if (document.getElementById('page-feed').classList.contains('active')) {
+      this._renderSpills();
+    }
+    App._updateSidebarProfile();
   },
 
   _bindTabs() {
-    // Sort tabs
     document.getElementById('feed-tabs').addEventListener('click', (e) => {
       const tab = e.target.closest('.feed-tab');
-      if (!tab) return;
+      if (!tab || !tab.dataset.sort) return;
       document.querySelectorAll('#feed-tabs .feed-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       this.currentSort = tab.dataset.sort;
       this._renderSpills();
     });
 
-    // Category filter
     document.getElementById('feed-category-filter').addEventListener('click', (e) => {
       const tab = e.target.closest('.feed-tab');
-      if (!tab) return;
+      if (!tab || tab.dataset.category === undefined) return;
       document.querySelectorAll('#feed-category-filter .feed-tab').forEach(t => t.classList.remove('active'));
       tab.classList.add('active');
       this.currentCategory = tab.dataset.category;
@@ -165,7 +182,7 @@ const Feed = {
   },
 
   _bindCards() {
-    document.querySelectorAll('.spill-card').forEach(card => {
+    document.querySelectorAll('#feed-list .spill-card').forEach(card => {
       card.addEventListener('click', () => {
         App.navigate('reader', card.dataset.spillId);
       });

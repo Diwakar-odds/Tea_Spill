@@ -1,12 +1,19 @@
 /* ═══════════════════════════════════════════════════
-   TEA SPILL ☕ — localStorage Persistence
+   TEA SPILL ☕ — localStorage Persistence Layer
    ═══════════════════════════════════════════════════ */
+
+'use strict';
 
 const Storage = {
   PREFIX: 'teaspill_',
-  _jsonColleges: [],   // loaded from colleges.json
+  _jsonColleges: [],
   _jsonLoaded: false,
 
+  /**
+   * Read a value from localStorage.
+   * @param {string} key
+   * @returns {*|null}
+   */
   get(key) {
     try {
       const raw = localStorage.getItem(this.PREFIX + key);
@@ -14,25 +21,38 @@ const Storage = {
     } catch { return null; }
   },
 
+  /**
+   * Write a value to localStorage.
+   * @param {string} key
+   * @param {*} value
+   */
   set(key, value) {
     try {
       localStorage.setItem(this.PREFIX + key, JSON.stringify(value));
     } catch (e) {
-      console.warn('Storage full or unavailable:', e);
+      console.warn('[Storage] quota exceeded or unavailable:', e);
     }
   },
 
+  /** Remove a key from localStorage. */
   remove(key) {
     localStorage.removeItem(this.PREFIX + key);
   },
 
-  // ─── Load colleges.json ───
+  /* ─── Colleges JSON loader ─── */
+
   async loadCollegesJSON() {
     if (this._jsonLoaded) return;
     try {
       const resp = await fetch('data/colleges.json');
       const data = await resp.json();
-      const icons = { IIT: '🏛️', NIT: '🎓', IIIT: '💻', IIM: '📊', IISER: '🔬', AIIMS: '🏥', Private: '🏫', Government: '🎓', 'Private University': '🏫', 'Deemed University': '🏫', 'State University': '📚', 'Central University': '📚', 'Central Institute': '🏛️' };
+      const ICONS = {
+        IIT: '🏛️', NIT: '🎓', IIIT: '💻', IIM: '📊',
+        IISER: '🔬', AIIMS: '🏥', Private: '🏫',
+        Government: '🎓', 'Private University': '🏫',
+        'Deemed University': '🏫', 'State University': '📚',
+        'Central University': '📚', 'Central Institute': '🏛️'
+      };
       let id = 0;
       this._jsonColleges = [];
       for (const stateObj of data.states) {
@@ -42,18 +62,19 @@ const Storage = {
             name: c.name,
             city: c.city,
             state: stateObj.state,
-            icon: icons[c.type] || '🏫',
+            icon: ICONS[c.type] || '🏫',
             verified: true
           });
         }
       }
       this._jsonLoaded = true;
     } catch (e) {
-      console.warn('Could not load colleges.json, using defaults:', e);
+      console.warn('[Storage] colleges.json unavailable, using defaults:', e);
     }
   },
 
-  // ─── User Profile ───
+  /* ─── User ─── */
+
   getUser() {
     return this.get('user') || {
       alias: this._generateAlias(),
@@ -66,28 +87,28 @@ const Storage = {
       college: null,
       department: null,
       savedSpills: [],
-      myReactions: {}   // { spillId: ['sip','fire'] }
+      myReactions: {},
+      followedPages: [],
+      joinedGroups: [],
+      subscribedChannels: [],
+      reportedSpills: []
     };
   },
 
-  saveUser(user) {
-    this.set('user', user);
-  },
+  saveUser(user) { this.set('user', user); },
 
-  // ─── Spills ───
+  /* ─── Spills ─── */
+
   getSpills() {
     const stored = this.get('spills');
     if (!stored || stored.length === 0) {
-      // Seed with mock data
       this.set('spills', MOCK_SPILLS);
       return [...MOCK_SPILLS];
     }
     return stored;
   },
 
-  saveSpills(spills) {
-    this.set('spills', spills);
-  },
+  saveSpills(spills) { this.set('spills', spills); },
 
   addSpill(spill) {
     const spills = this.getSpills();
@@ -96,11 +117,17 @@ const Storage = {
     return spills;
   },
 
-  // ─── Colleges ───
+  removeSpill(spillId) {
+    let spills = this.getSpills();
+    spills = spills.filter(s => s.id !== spillId);
+    this.saveSpills(spills);
+    return spills;
+  },
+
+  /* ─── Colleges ─── */
+
   getColleges() {
     const custom = this.get('custom_colleges') || [];
-    // Merge: DEFAULT_COLLEGES (from data.js) + JSON colleges + user-added
-    // De-duplicate by name
     const all = [...DEFAULT_COLLEGES, ...this._jsonColleges, ...custom];
     const seen = new Set();
     return all.filter(c => {
@@ -118,7 +145,33 @@ const Storage = {
     return this.getColleges();
   },
 
-  // ─── Helper ───
+  /* ─── Pages / Groups / Channels ─── */
+
+  getPages()    { return this.get('pages')    || [...MOCK_PAGES]; },
+  getGroups()   { return this.get('groups')   || [...MOCK_GROUPS]; },
+  getChannels() { return this.get('channels') || [...MOCK_CHANNELS]; },
+
+  savePages(p)    { this.set('pages', p); },
+  saveGroups(g)   { this.set('groups', g); },
+  saveChannels(c) { this.set('channels', c); },
+
+  /* ─── Reports / Moderation ─── */
+
+  getReports() { return this.get('reports') || []; },
+
+  addReport(report) {
+    const reports = this.getReports();
+    reports.push(report);
+    this.set('reports', reports);
+  },
+
+  /* ─── Awards ─── */
+
+  getAwards() { return this.get('awards') || []; },
+  saveAwards(a) { this.set('awards', a); },
+
+  /* ─── Helpers ─── */
+
   _generateAlias() {
     const adj = ALIASES_ADJECTIVES[Math.floor(Math.random() * ALIASES_ADJECTIVES.length)];
     const noun = ALIASES_NOUNS[Math.floor(Math.random() * ALIASES_NOUNS.length)];

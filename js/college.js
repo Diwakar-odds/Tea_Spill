@@ -1,15 +1,20 @@
 /* ═══════════════════════════════════════════════════
    TEA SPILL ☕ — College Hub Module
+   Browse, search, leaderboard, college detail
+   with department filter.
    ═══════════════════════════════════════════════════ */
 
+'use strict';
+
 const College = {
+
   render() {
     const page = document.getElementById('page-colleges');
     const colleges = Storage.getColleges();
     const spills = Storage.getSpills();
 
     // Top colleges by spill count
-    const leaderboard = [...colleges]
+    const leaderboard = colleges
       .map(c => ({ ...c, spillCount: Utils.collegeSpillCount(spills, c.id) }))
       .filter(c => c.spillCount > 0)
       .sort((a, b) => b.spillCount - a.spillCount)
@@ -19,17 +24,17 @@ const College = {
       <div class="section-header">
         <div>
           <h1 class="section-title">🏫 College Hub</h1>
-          <p class="section-subtitle">Explore campuses across India</p>
+          <p class="section-subtitle">${colleges.length} colleges across India</p>
         </div>
       </div>
 
       <div class="search-bar">
-        <input type="search" id="college-search" placeholder="Search colleges..." />
+        <input type="search" id="college-search" placeholder="Search colleges by name, city, or state..." />
       </div>
 
       ${leaderboard.length > 0 ? `
-      <div class="leaderboard">
-        <h2 class="section-title" style="font-size: var(--font-size-lg); margin-bottom: var(--space-lg);">🏆 Hottest Campuses</h2>
+      <div class="leaderboard" style="margin-bottom:var(--space-3xl)">
+        <h2 class="section-title" style="font-size:var(--font-size-lg);margin-bottom:var(--space-lg)">🏆 Hottest Campuses</h2>
         <div class="leaderboard-list">
           ${leaderboard.map((c, i) => `
             <div class="leaderboard-item" data-college="${c.id}" style="cursor:pointer">
@@ -45,10 +50,11 @@ const College = {
       </div>
       ` : ''}
 
-      <h2 class="section-title" style="font-size: var(--font-size-lg); margin-bottom: var(--space-lg);">All Colleges</h2>
+      <h2 class="section-title" style="font-size:var(--font-size-lg);margin-bottom:var(--space-lg)">All Colleges</h2>
       <div class="college-grid" id="college-grid">
-        ${colleges.map(c => this._collegeCard(c, spills)).join('')}
+        ${colleges.slice(0, 50).map(c => this._collegeCard(c, spills)).join('')}
       </div>
+      ${colleges.length > 50 ? `<p style="text-align:center;color:var(--text-muted);margin-top:var(--space-xl);font-size:var(--font-size-sm)">Showing 50 of ${colleges.length} colleges. Use search to find more.</p>` : ''}
     `;
 
     this._bindSearch(colleges, spills);
@@ -72,7 +78,9 @@ const College = {
 
   _bindSearch(colleges, spills) {
     const input = document.getElementById('college-search');
-    input.addEventListener('input', () => {
+    if (!input) return;
+
+    input.addEventListener('input', Utils.debounce(() => {
       const q = input.value.toLowerCase().trim();
       const filtered = q
         ? colleges.filter(c =>
@@ -80,11 +88,16 @@ const College = {
             c.city.toLowerCase().includes(q) ||
             c.state.toLowerCase().includes(q)
           )
-        : colleges;
-      document.getElementById('college-grid').innerHTML =
-        filtered.map(c => this._collegeCard(c, spills)).join('');
+        : colleges.slice(0, 50);
+
+      const grid = document.getElementById('college-grid');
+      if (filtered.length === 0) {
+        grid.innerHTML = `<div class="empty-state" style="grid-column:1/-1"><div class="empty-state-icon">🔍</div><div class="empty-state-title">No colleges found</div><div class="empty-state-text">Try a different search term or add your college when creating a spill.</div></div>`;
+      } else {
+        grid.innerHTML = filtered.slice(0, 50).map(c => this._collegeCard(c, spills)).join('');
+      }
       this._bindCards();
-    });
+    }, 200));
   },
 
   _bindCards() {
@@ -103,10 +116,12 @@ const College = {
     const collegeSpills = Utils.filterByCollege(spills, collegeId);
     const page = document.getElementById('page-college-detail');
 
-    // Get unique departments in this college
     const depts = [...new Set(collegeSpills.map(s => s.department).filter(Boolean))];
+    const totalReactions = collegeSpills.reduce((sum, s) => sum + Utils.totalReactions(s.reactions), 0);
 
     page.innerHTML = `
+      <button class="reader-back" onclick="App.navigate('colleges')">← Back to colleges</button>
+
       <div class="college-detail-header">
         <div class="college-detail-icon">${college.icon}</div>
         <h1 class="college-detail-name">${Utils.escapeHtml(college.name)}</h1>
@@ -121,7 +136,7 @@ const College = {
             <div class="profile-stat-label">Departments</div>
           </div>
           <div class="profile-stat">
-            <div class="profile-stat-value">${Utils.formatNumber(collegeSpills.reduce((sum, s) => sum + Utils.totalReactions(s.reactions), 0))}</div>
+            <div class="profile-stat-value">${Utils.formatNumber(totalReactions)}</div>
             <div class="profile-stat-label">Reactions</div>
           </div>
         </div>
@@ -141,16 +156,10 @@ const College = {
                <div class="empty-state-icon">🏫</div>
                <div class="empty-state-title">No tea from this campus yet</div>
                <div class="empty-state-text">Be the first to spill!</div>
-             </div>`
-        }
+             </div>`}
       </div>
-
-      <button class="reader-back" onclick="App.navigate('colleges')" style="margin-top: var(--space-2xl);">
-        ← Back to all colleges
-      </button>
     `;
 
-    // Activate college detail page
     App._showPage('college-detail');
 
     // Bind department filter
@@ -165,14 +174,14 @@ const College = {
         const filtered = dept === 'all' ? collegeSpills : collegeSpills.filter(s => s.department === dept);
         document.getElementById('college-spill-list').innerHTML =
           filtered.map(s => Feed._spillCard(s)).join('');
-        // Rebind cards
-        document.querySelectorAll('#college-spill-list .spill-card').forEach(card => {
-          card.addEventListener('click', () => App.navigate('reader', card.dataset.spillId));
-        });
+        this._bindDetailCards();
       });
     }
 
-    // Bind spill cards
+    this._bindDetailCards();
+  },
+
+  _bindDetailCards() {
     document.querySelectorAll('#college-spill-list .spill-card').forEach(card => {
       card.addEventListener('click', () => App.navigate('reader', card.dataset.spillId));
     });
