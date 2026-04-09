@@ -6,7 +6,7 @@ const App = {
   currentPage: 'feed',
   previousPage: 'feed',
 
-  init() {
+  async init() {
     // Wait for splash animation
     setTimeout(() => {
       document.getElementById('splash-screen').classList.add('hidden');
@@ -15,6 +15,9 @@ const App = {
     // Initialize user (creates default if none)
     const user = Storage.getUser();
     Storage.saveUser(user);
+
+    // Load 350+ colleges from JSON
+    await Storage.loadCollegesJSON();
 
     // Initialize modules
     Spill.init();

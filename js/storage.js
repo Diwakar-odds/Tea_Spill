@@ -4,6 +4,8 @@
 
 const Storage = {
   PREFIX: 'teaspill_',
+  _jsonColleges: [],   // loaded from colleges.json
+  _jsonLoaded: false,
 
   get(key) {
     try {
@@ -22,6 +24,33 @@ const Storage = {
 
   remove(key) {
     localStorage.removeItem(this.PREFIX + key);
+  },
+
+  // ─── Load colleges.json ───
+  async loadCollegesJSON() {
+    if (this._jsonLoaded) return;
+    try {
+      const resp = await fetch('data/colleges.json');
+      const data = await resp.json();
+      const icons = { IIT: '🏛️', NIT: '🎓', IIIT: '💻', IIM: '📊', IISER: '🔬', AIIMS: '🏥', Private: '🏫', Government: '🎓', 'Private University': '🏫', 'Deemed University': '🏫', 'State University': '📚', 'Central University': '📚', 'Central Institute': '🏛️' };
+      let id = 0;
+      this._jsonColleges = [];
+      for (const stateObj of data.states) {
+        for (const c of stateObj.colleges) {
+          this._jsonColleges.push({
+            id: 'json_' + (id++),
+            name: c.name,
+            city: c.city,
+            state: stateObj.state,
+            icon: icons[c.type] || '🏫',
+            verified: true
+          });
+        }
+      }
+      this._jsonLoaded = true;
+    } catch (e) {
+      console.warn('Could not load colleges.json, using defaults:', e);
+    }
   },
 
   // ─── User Profile ───
@@ -70,7 +99,16 @@ const Storage = {
   // ─── Colleges ───
   getColleges() {
     const custom = this.get('custom_colleges') || [];
-    return [...DEFAULT_COLLEGES, ...custom];
+    // Merge: DEFAULT_COLLEGES (from data.js) + JSON colleges + user-added
+    // De-duplicate by name
+    const all = [...DEFAULT_COLLEGES, ...this._jsonColleges, ...custom];
+    const seen = new Set();
+    return all.filter(c => {
+      const key = c.name.toLowerCase();
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
   },
 
   addCollege(college) {
