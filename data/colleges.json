@@ -1,0 +1,541 @@
+{
+  "meta": {
+    "version": "1.0",
+    "totalColleges": 350,
+    "lastUpdated": "2026-04-10",
+    "description": "Comprehensive list of colleges across India for Tea Spill platform"
+  },
+  "states": [
+    {
+      "state": "Andhra Pradesh",
+      "code": "AP",
+      "colleges": [
+        { "name": "Indian Institute of Technology Tirupati", "city": "Tirupati", "type": "IIT", "category": "Engineering" },
+        { "name": "Andhra University", "city": "Visakhapatnam", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Sri Venkateswara University", "city": "Tirupati", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "JNTU Kakinada", "city": "Kakinada", "type": "State University", "category": "Engineering" },
+        { "name": "JNTU Anantapur", "city": "Anantapur", "type": "State University", "category": "Engineering" },
+        { "name": "NIT Tadepalligudem", "city": "Tadepalligudem", "type": "NIT", "category": "Engineering" },
+        { "name": "IIIT Kurnool", "city": "Kurnool", "type": "IIIT", "category": "Engineering" },
+        { "name": "GITAM University", "city": "Visakhapatnam", "type": "Deemed University", "category": "Multi-Disciplinary" },
+        { "name": "KL University", "city": "Vijayawada", "type": "Deemed University", "category": "Engineering" },
+        { "name": "VIT-AP University", "city": "Amaravati", "type": "Private University", "category": "Multi-Disciplinary" },
+        { "name": "SRM University AP", "city": "Amaravati", "type": "Private University", "category": "Multi-Disciplinary" },
+        { "name": "RGUKT Nuzvid", "city": "Nuzvid", "type": "State University", "category": "Engineering" }
+      ]
+    },
+    {
+      "state": "Arunachal Pradesh",
+      "code": "AR",
+      "colleges": [
+        { "name": "Rajiv Gandhi University", "city": "Itanagar", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "NIT Arunachal Pradesh", "city": "Yupia", "type": "NIT", "category": "Engineering" },
+        { "name": "North Eastern Regional Institute of Science and Technology", "city": "Nirjuli", "type": "Deemed University", "category": "Engineering" },
+        { "name": "Tomo Riba Institute of Health and Medical Sciences", "city": "Naharlagun", "type": "Government", "category": "Medical" }
+      ]
+    },
+    {
+      "state": "Assam",
+      "code": "AS",
+      "colleges": [
+        { "name": "Indian Institute of Technology Guwahati", "city": "Guwahati", "type": "IIT", "category": "Engineering" },
+        { "name": "Gauhati University", "city": "Guwahati", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Tezpur University", "city": "Tezpur", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "Dibrugarh University", "city": "Dibrugarh", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Assam Engineering College", "city": "Guwahati", "type": "Government", "category": "Engineering" },
+        { "name": "NIT Silchar", "city": "Silchar", "type": "NIT", "category": "Engineering" },
+        { "name": "Cotton University", "city": "Guwahati", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Assam Medical College", "city": "Dibrugarh", "type": "Government", "category": "Medical" },
+        { "name": "Jorhat Engineering College", "city": "Jorhat", "type": "Government", "category": "Engineering" }
+      ]
+    },
+    {
+      "state": "Bihar",
+      "code": "BR",
+      "colleges": [
+        { "name": "Indian Institute of Technology Patna", "city": "Patna", "type": "IIT", "category": "Engineering" },
+        { "name": "NIT Patna", "city": "Patna", "type": "NIT", "category": "Engineering" },
+        { "name": "Patna University", "city": "Patna", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Nalanda University", "city": "Rajgir", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "Central University of South Bihar", "city": "Gaya", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "Chanakya National Law University", "city": "Patna", "type": "State University", "category": "Law" },
+        { "name": "Bihar Engineering University", "city": "Patna", "type": "State University", "category": "Engineering" },
+        { "name": "AIIMS Patna", "city": "Patna", "type": "AIIMS", "category": "Medical" },
+        { "name": "Muzaffarpur Institute of Technology", "city": "Muzaffarpur", "type": "Government", "category": "Engineering" },
+        { "name": "Birla Institute of Technology Patna", "city": "Patna", "type": "Private", "category": "Engineering" }
+      ]
+    },
+    {
+      "state": "Chhattisgarh",
+      "code": "CG",
+      "colleges": [
+        { "name": "Indian Institute of Technology Bhilai", "city": "Bhilai", "type": "IIT", "category": "Engineering" },
+        { "name": "NIT Raipur", "city": "Raipur", "type": "NIT", "category": "Engineering" },
+        { "name": "Pt. Ravishankar Shukla University", "city": "Raipur", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Guru Ghasidas Vishwavidyalaya", "city": "Bilaspur", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "IIIT Naya Raipur", "city": "Naya Raipur", "type": "IIIT", "category": "Engineering" },
+        { "name": "AIIMS Raipur", "city": "Raipur", "type": "AIIMS", "category": "Medical" },
+        { "name": "Hidayatullah National Law University", "city": "Naya Raipur", "type": "State University", "category": "Law" }
+      ]
+    },
+    {
+      "state": "Goa",
+      "code": "GA",
+      "colleges": [
+        { "name": "Indian Institute of Technology Goa", "city": "Ponda", "type": "IIT", "category": "Engineering" },
+        { "name": "NIT Goa", "city": "Ponda", "type": "NIT", "category": "Engineering" },
+        { "name": "Goa University", "city": "Taleigao", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Goa Engineering College", "city": "Ponda", "type": "Government", "category": "Engineering" },
+        { "name": "Goa Medical College", "city": "Bambolim", "type": "Government", "category": "Medical" },
+        { "name": "BITS Pilani Goa Campus", "city": "Zuarinagar", "type": "Private", "category": "Engineering" }
+      ]
+    },
+    {
+      "state": "Gujarat",
+      "code": "GJ",
+      "colleges": [
+        { "name": "Indian Institute of Technology Gandhinagar", "city": "Gandhinagar", "type": "IIT", "category": "Engineering" },
+        { "name": "NIT Surat", "city": "Surat", "type": "NIT", "category": "Engineering" },
+        { "name": "Gujarat University", "city": "Ahmedabad", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "MS University of Baroda", "city": "Vadodara", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "DAIICT", "city": "Gandhinagar", "type": "Private", "category": "Engineering" },
+        { "name": "Nirma University", "city": "Ahmedabad", "type": "Private University", "category": "Multi-Disciplinary" },
+        { "name": "Gujarat Technological University", "city": "Ahmedabad", "type": "State University", "category": "Engineering" },
+        { "name": "PDPU Gandhinagar", "city": "Gandhinagar", "type": "Private University", "category": "Engineering" },
+        { "name": "IIM Ahmedabad", "city": "Ahmedabad", "type": "IIM", "category": "Management" },
+        { "name": "LD College of Engineering", "city": "Ahmedabad", "type": "Government", "category": "Engineering" },
+        { "name": "Ahmedabad University", "city": "Ahmedabad", "type": "Private University", "category": "Multi-Disciplinary" },
+        { "name": "IIIT Vadodara", "city": "Vadodara", "type": "IIIT", "category": "Engineering" }
+      ]
+    },
+    {
+      "state": "Haryana",
+      "code": "HR",
+      "colleges": [
+        { "name": "NIT Kurukshetra", "city": "Kurukshetra", "type": "NIT", "category": "Engineering" },
+        { "name": "Ashoka University", "city": "Sonipat", "type": "Private University", "category": "Liberal Arts" },
+        { "name": "O.P. Jindal Global University", "city": "Sonipat", "type": "Private University", "category": "Multi-Disciplinary" },
+        { "name": "Maharshi Dayanand University", "city": "Rohtak", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Kurukshetra University", "city": "Kurukshetra", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "IIIT Sonepat", "city": "Sonepat", "type": "IIIT", "category": "Engineering" },
+        { "name": "Deenbandhu Chhotu Ram University of Science and Technology", "city": "Murthal", "type": "State University", "category": "Engineering" },
+        { "name": "BML Munjal University", "city": "Gurugram", "type": "Private University", "category": "Multi-Disciplinary" },
+        { "name": "National Law University Haryana", "city": "Sonipat", "type": "State University", "category": "Law" },
+        { "name": "IIM Rohtak", "city": "Rohtak", "type": "IIM", "category": "Management" },
+        { "name": "Shiv Nadar University", "city": "Gurugram", "type": "Private University", "category": "Multi-Disciplinary" }
+      ]
+    },
+    {
+      "state": "Himachal Pradesh",
+      "code": "HP",
+      "colleges": [
+        { "name": "Indian Institute of Technology Mandi", "city": "Mandi", "type": "IIT", "category": "Engineering" },
+        { "name": "NIT Hamirpur", "city": "Hamirpur", "type": "NIT", "category": "Engineering" },
+        { "name": "Himachal Pradesh University", "city": "Shimla", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Central University of Himachal Pradesh", "city": "Dharamshala", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "IIIT Una", "city": "Una", "type": "IIIT", "category": "Engineering" },
+        { "name": "Jaypee University of Information Technology", "city": "Solan", "type": "Private University", "category": "Engineering" },
+        { "name": "AIIMS Bilaspur", "city": "Bilaspur", "type": "AIIMS", "category": "Medical" }
+      ]
+    },
+    {
+      "state": "Jharkhand",
+      "code": "JH",
+      "colleges": [
+        { "name": "Indian Institute of Technology (ISM) Dhanbad", "city": "Dhanbad", "type": "IIT", "category": "Engineering" },
+        { "name": "NIT Jamshedpur", "city": "Jamshedpur", "type": "NIT", "category": "Engineering" },
+        { "name": "Birla Institute of Technology Mesra", "city": "Ranchi", "type": "Deemed University", "category": "Engineering" },
+        { "name": "Ranchi University", "city": "Ranchi", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Central University of Jharkhand", "city": "Ranchi", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "XLRI Jamshedpur", "city": "Jamshedpur", "type": "Private", "category": "Management" },
+        { "name": "IIM Ranchi", "city": "Ranchi", "type": "IIM", "category": "Management" },
+        { "name": "National Law University Jharkhand", "city": "Ranchi", "type": "State University", "category": "Law" }
+      ]
+    },
+    {
+      "state": "Karnataka",
+      "code": "KA",
+      "colleges": [
+        { "name": "Indian Institute of Science", "city": "Bangalore", "type": "Central Institute", "category": "Science & Engineering" },
+        { "name": "Indian Institute of Technology Dharwad", "city": "Dharwad", "type": "IIT", "category": "Engineering" },
+        { "name": "NIT Karnataka Surathkal", "city": "Mangalore", "type": "NIT", "category": "Engineering" },
+        { "name": "IIM Bangalore", "city": "Bangalore", "type": "IIM", "category": "Management" },
+        { "name": "RV College of Engineering", "city": "Bangalore", "type": "Private", "category": "Engineering" },
+        { "name": "BMS College of Engineering", "city": "Bangalore", "type": "Private", "category": "Engineering" },
+        { "name": "PES University", "city": "Bangalore", "type": "Private University", "category": "Engineering" },
+        { "name": "Manipal Institute of Technology", "city": "Manipal", "type": "Private", "category": "Engineering" },
+        { "name": "MS Ramaiah Institute of Technology", "city": "Bangalore", "type": "Private", "category": "Engineering" },
+        { "name": "Bangalore University", "city": "Bangalore", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Christ University", "city": "Bangalore", "type": "Deemed University", "category": "Multi-Disciplinary" },
+        { "name": "Mysore University", "city": "Mysore", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "IIIT Bangalore", "city": "Bangalore", "type": "IIIT", "category": "Engineering" },
+        { "name": "National Law School of India University", "city": "Bangalore", "type": "State University", "category": "Law" },
+        { "name": "Dayananda Sagar College of Engineering", "city": "Bangalore", "type": "Private", "category": "Engineering" },
+        { "name": "SJCE Mysore", "city": "Mysore", "type": "Government", "category": "Engineering" },
+        { "name": "St. Joseph's College", "city": "Bangalore", "type": "Private", "category": "Arts & Science" },
+        { "name": "Jain University", "city": "Bangalore", "type": "Deemed University", "category": "Multi-Disciplinary" }
+      ]
+    },
+    {
+      "state": "Kerala",
+      "code": "KL",
+      "colleges": [
+        { "name": "Indian Institute of Technology Palakkad", "city": "Palakkad", "type": "IIT", "category": "Engineering" },
+        { "name": "NIT Calicut", "city": "Kozhikode", "type": "NIT", "category": "Engineering" },
+        { "name": "IIM Kozhikode", "city": "Kozhikode", "type": "IIM", "category": "Management" },
+        { "name": "IISER Thiruvananthapuram", "city": "Thiruvananthapuram", "type": "IISER", "category": "Science" },
+        { "name": "Cochin University of Science and Technology", "city": "Kochi", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "University of Kerala", "city": "Thiruvananthapuram", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Calicut University", "city": "Malappuram", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Mahatma Gandhi University", "city": "Kottayam", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "College of Engineering Trivandrum", "city": "Thiruvananthapuram", "type": "Government", "category": "Engineering" },
+        { "name": "Amrita Vishwa Vidyapeetham", "city": "Kollam", "type": "Deemed University", "category": "Multi-Disciplinary" },
+        { "name": "IIIT Kottayam", "city": "Kottayam", "type": "IIIT", "category": "Engineering" },
+        { "name": "National University of Advanced Legal Studies", "city": "Kochi", "type": "State University", "category": "Law" },
+        { "name": "Government Medical College Thiruvananthapuram", "city": "Thiruvananthapuram", "type": "Government", "category": "Medical" }
+      ]
+    },
+    {
+      "state": "Madhya Pradesh",
+      "code": "MP",
+      "colleges": [
+        { "name": "Indian Institute of Technology Indore", "city": "Indore", "type": "IIT", "category": "Engineering" },
+        { "name": "IIM Indore", "city": "Indore", "type": "IIM", "category": "Management" },
+        { "name": "MANIT Bhopal", "city": "Bhopal", "type": "NIT", "category": "Engineering" },
+        { "name": "IIIT Bhopal", "city": "Bhopal", "type": "IIIT", "category": "Engineering" },
+        { "name": "AIIMS Bhopal", "city": "Bhopal", "type": "AIIMS", "category": "Medical" },
+        { "name": "Devi Ahilya Vishwavidyalaya", "city": "Indore", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Rajiv Gandhi Proudyogiki Vishwavidyalaya", "city": "Bhopal", "type": "State University", "category": "Engineering" },
+        { "name": "IISER Bhopal", "city": "Bhopal", "type": "IISER", "category": "Science" },
+        { "name": "NLIU Bhopal", "city": "Bhopal", "type": "State University", "category": "Law" },
+        { "name": "Barkatullah University", "city": "Bhopal", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Jabalpur Engineering College", "city": "Jabalpur", "type": "Government", "category": "Engineering" },
+        { "name": "IIITDM Jabalpur", "city": "Jabalpur", "type": "IIIT", "category": "Engineering" }
+      ]
+    },
+    {
+      "state": "Maharashtra",
+      "code": "MH",
+      "colleges": [
+        { "name": "Indian Institute of Technology Bombay", "city": "Mumbai", "type": "IIT", "category": "Engineering" },
+        { "name": "IIM Mumbai", "city": "Mumbai", "type": "IIM", "category": "Management" },
+        { "name": "College of Engineering Pune (COEP)", "city": "Pune", "type": "Government", "category": "Engineering" },
+        { "name": "VJTI Mumbai", "city": "Mumbai", "type": "Government", "category": "Engineering" },
+        { "name": "Savitribai Phule Pune University", "city": "Pune", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "University of Mumbai", "city": "Mumbai", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Symbiosis International University", "city": "Pune", "type": "Deemed University", "category": "Multi-Disciplinary" },
+        { "name": "VNIT Nagpur", "city": "Nagpur", "type": "NIT", "category": "Engineering" },
+        { "name": "IISER Pune", "city": "Pune", "type": "IISER", "category": "Science" },
+        { "name": "ICT Mumbai", "city": "Mumbai", "type": "Government", "category": "Engineering" },
+        { "name": "IIT Nagpur", "city": "Nagpur", "type": "IIT", "category": "Engineering" },
+        { "name": "BITS Pilani Goa Campus", "city": "Goa", "type": "Private", "category": "Engineering" },
+        { "name": "St. Xavier's College Mumbai", "city": "Mumbai", "type": "Private", "category": "Arts & Science" },
+        { "name": "Fergusson College", "city": "Pune", "type": "Government", "category": "Arts & Science" },
+        { "name": "IIIT Nagpur", "city": "Nagpur", "type": "IIIT", "category": "Engineering" },
+        { "name": "Tata Institute of Social Sciences", "city": "Mumbai", "type": "Deemed University", "category": "Social Sciences" },
+        { "name": "Dr. D.Y. Patil Vidyapeeth", "city": "Pune", "type": "Deemed University", "category": "Multi-Disciplinary" },
+        { "name": "Maharashtra Institute of Technology", "city": "Pune", "type": "Private", "category": "Engineering" },
+        { "name": "Walchand College of Engineering", "city": "Sangli", "type": "Government", "category": "Engineering" }
+      ]
+    },
+    {
+      "state": "Manipur",
+      "code": "MN",
+      "colleges": [
+        { "name": "NIT Manipur", "city": "Imphal", "type": "NIT", "category": "Engineering" },
+        { "name": "Manipur University", "city": "Imphal", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "Central Agricultural University", "city": "Imphal", "type": "Central University", "category": "Agriculture" },
+        { "name": "National Sports University", "city": "Imphal", "type": "Central University", "category": "Sports" }
+      ]
+    },
+    {
+      "state": "Meghalaya",
+      "code": "ML",
+      "colleges": [
+        { "name": "Indian Institute of Technology Meghalaya", "city": "Shillong", "type": "IIT", "category": "Engineering" },
+        { "name": "NIT Meghalaya", "city": "Shillong", "type": "NIT", "category": "Engineering" },
+        { "name": "North Eastern Hill University", "city": "Shillong", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "IIM Shillong", "city": "Shillong", "type": "IIM", "category": "Management" }
+      ]
+    },
+    {
+      "state": "Mizoram",
+      "code": "MZ",
+      "colleges": [
+        { "name": "NIT Mizoram", "city": "Aizawl", "type": "NIT", "category": "Engineering" },
+        { "name": "Mizoram University", "city": "Aizawl", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "ICFAI University Mizoram", "city": "Aizawl", "type": "Private University", "category": "Multi-Disciplinary" }
+      ]
+    },
+    {
+      "state": "Nagaland",
+      "code": "NL",
+      "colleges": [
+        { "name": "NIT Nagaland", "city": "Dimapur", "type": "NIT", "category": "Engineering" },
+        { "name": "Nagaland University", "city": "Lumami", "type": "Central University", "category": "Multi-Disciplinary" }
+      ]
+    },
+    {
+      "state": "Odisha",
+      "code": "OD",
+      "colleges": [
+        { "name": "Indian Institute of Technology Bhubaneswar", "city": "Bhubaneswar", "type": "IIT", "category": "Engineering" },
+        { "name": "NIT Rourkela", "city": "Rourkela", "type": "NIT", "category": "Engineering" },
+        { "name": "IIIT Bhubaneswar", "city": "Bhubaneswar", "type": "IIIT", "category": "Engineering" },
+        { "name": "Utkal University", "city": "Bhubaneswar", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "IISER Berhampur", "city": "Berhampur", "type": "IISER", "category": "Science" },
+        { "name": "KIIT University", "city": "Bhubaneswar", "type": "Deemed University", "category": "Multi-Disciplinary" },
+        { "name": "AIIMS Bhubaneswar", "city": "Bhubaneswar", "type": "AIIMS", "category": "Medical" },
+        { "name": "Xavier University Bhubaneswar", "city": "Bhubaneswar", "type": "Private University", "category": "Multi-Disciplinary" },
+        { "name": "IIM Sambalpur", "city": "Sambalpur", "type": "IIM", "category": "Management" },
+        { "name": "National Law University Odisha", "city": "Cuttack", "type": "State University", "category": "Law" },
+        { "name": "Veer Surendra Sai University of Technology", "city": "Burla", "type": "State University", "category": "Engineering" }
+      ]
+    },
+    {
+      "state": "Punjab",
+      "code": "PB",
+      "colleges": [
+        { "name": "Indian Institute of Technology Ropar", "city": "Rupnagar", "type": "IIT", "category": "Engineering" },
+        { "name": "NIT Jalandhar", "city": "Jalandhar", "type": "NIT", "category": "Engineering" },
+        { "name": "Panjab University", "city": "Chandigarh", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Thapar Institute of Engineering and Technology", "city": "Patiala", "type": "Deemed University", "category": "Engineering" },
+        { "name": "Guru Nanak Dev University", "city": "Amritsar", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Punjabi University", "city": "Patiala", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "IIIT Jalandhar", "city": "Jalandhar", "type": "IIIT", "category": "Engineering" },
+        { "name": "Lovely Professional University", "city": "Phagwara", "type": "Private University", "category": "Multi-Disciplinary" },
+        { "name": "Chandigarh University", "city": "Mohali", "type": "Private University", "category": "Multi-Disciplinary" },
+        { "name": "IIM Amritsar", "city": "Amritsar", "type": "IIM", "category": "Management" }
+      ]
+    },
+    {
+      "state": "Rajasthan",
+      "code": "RJ",
+      "colleges": [
+        { "name": "Indian Institute of Technology Jodhpur", "city": "Jodhpur", "type": "IIT", "category": "Engineering" },
+        { "name": "MNIT Jaipur", "city": "Jaipur", "type": "NIT", "category": "Engineering" },
+        { "name": "BITS Pilani", "city": "Pilani", "type": "Deemed University", "category": "Engineering" },
+        { "name": "University of Rajasthan", "city": "Jaipur", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "IIM Udaipur", "city": "Udaipur", "type": "IIM", "category": "Management" },
+        { "name": "IIIT Kota", "city": "Kota", "type": "IIIT", "category": "Engineering" },
+        { "name": "Central University of Rajasthan", "city": "Ajmer", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "LNMIIT Jaipur", "city": "Jaipur", "type": "Private", "category": "Engineering" },
+        { "name": "Rajasthan Technical University", "city": "Kota", "type": "State University", "category": "Engineering" },
+        { "name": "National Law University Jodhpur", "city": "Jodhpur", "type": "State University", "category": "Law" },
+        { "name": "AIIMS Jodhpur", "city": "Jodhpur", "type": "AIIMS", "category": "Medical" },
+        { "name": "Manipal University Jaipur", "city": "Jaipur", "type": "Private University", "category": "Multi-Disciplinary" }
+      ]
+    },
+    {
+      "state": "Sikkim",
+      "code": "SK",
+      "colleges": [
+        { "name": "NIT Sikkim", "city": "Ravangla", "type": "NIT", "category": "Engineering" },
+        { "name": "Sikkim Manipal University", "city": "Gangtok", "type": "Private University", "category": "Multi-Disciplinary" },
+        { "name": "Sikkim University", "city": "Gangtok", "type": "Central University", "category": "Multi-Disciplinary" }
+      ]
+    },
+    {
+      "state": "Tamil Nadu",
+      "code": "TN",
+      "colleges": [
+        { "name": "Indian Institute of Technology Madras", "city": "Chennai", "type": "IIT", "category": "Engineering" },
+        { "name": "IIM Tiruchirappalli", "city": "Tiruchirappalli", "type": "IIM", "category": "Management" },
+        { "name": "NIT Tiruchirappalli", "city": "Tiruchirappalli", "type": "NIT", "category": "Engineering" },
+        { "name": "Anna University", "city": "Chennai", "type": "State University", "category": "Engineering" },
+        { "name": "University of Madras", "city": "Chennai", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Madras Christian College", "city": "Chennai", "type": "Private", "category": "Arts & Science" },
+        { "name": "Loyola College Chennai", "city": "Chennai", "type": "Private", "category": "Arts & Science" },
+        { "name": "PSG College of Technology", "city": "Coimbatore", "type": "Private", "category": "Engineering" },
+        { "name": "SRM Institute of Science and Technology", "city": "Chennai", "type": "Deemed University", "category": "Engineering" },
+        { "name": "VIT Vellore", "city": "Vellore", "type": "Deemed University", "category": "Engineering" },
+        { "name": "SASTRA Deemed University", "city": "Thanjavur", "type": "Deemed University", "category": "Engineering" },
+        { "name": "SSN College of Engineering", "city": "Chennai", "type": "Private", "category": "Engineering" },
+        { "name": "CEG Anna University", "city": "Chennai", "type": "Government", "category": "Engineering" },
+        { "name": "Bharathiar University", "city": "Coimbatore", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "IIIT Tiruchirappalli", "city": "Tiruchirappalli", "type": "IIIT", "category": "Engineering" },
+        { "name": "National Law University Chennai", "city": "Chennai", "type": "State University", "category": "Law" },
+        { "name": "CMC Vellore", "city": "Vellore", "type": "Deemed University", "category": "Medical" },
+        { "name": "IIT Tirupati", "city": "Tirupati", "type": "IIT", "category": "Engineering" },
+        { "name": "Amrita Vishwa Vidyapeetham Coimbatore", "city": "Coimbatore", "type": "Deemed University", "category": "Multi-Disciplinary" }
+      ]
+    },
+    {
+      "state": "Telangana",
+      "code": "TS",
+      "colleges": [
+        { "name": "Indian Institute of Technology Hyderabad", "city": "Hyderabad", "type": "IIT", "category": "Engineering" },
+        { "name": "IIIT Hyderabad", "city": "Hyderabad", "type": "IIIT", "category": "Engineering" },
+        { "name": "NIT Warangal", "city": "Warangal", "type": "NIT", "category": "Engineering" },
+        { "name": "University of Hyderabad", "city": "Hyderabad", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "Osmania University", "city": "Hyderabad", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "JNTU Hyderabad", "city": "Hyderabad", "type": "State University", "category": "Engineering" },
+        { "name": "BITS Pilani Hyderabad Campus", "city": "Hyderabad", "type": "Deemed University", "category": "Engineering" },
+        { "name": "ISB Hyderabad", "city": "Hyderabad", "type": "Private", "category": "Management" },
+        { "name": "IIM Hyderabad", "city": "Hyderabad", "type": "IIM", "category": "Management" },
+        { "name": "NALSAR University of Law", "city": "Hyderabad", "type": "State University", "category": "Law" },
+        { "name": "IISER Tirupati", "city": "Tirupati", "type": "IISER", "category": "Science" },
+        { "name": "CBIT Hyderabad", "city": "Hyderabad", "type": "Private", "category": "Engineering" },
+        { "name": "Vasavi College of Engineering", "city": "Hyderabad", "type": "Private", "category": "Engineering" },
+        { "name": "Mahindra University", "city": "Hyderabad", "type": "Private University", "category": "Multi-Disciplinary" }
+      ]
+    },
+    {
+      "state": "Tripura",
+      "code": "TR",
+      "colleges": [
+        { "name": "NIT Agartala", "city": "Agartala", "type": "NIT", "category": "Engineering" },
+        { "name": "Tripura University", "city": "Agartala", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "IIIT Agartala", "city": "Agartala", "type": "IIIT", "category": "Engineering" }
+      ]
+    },
+    {
+      "state": "Uttar Pradesh",
+      "code": "UP",
+      "colleges": [
+        { "name": "Indian Institute of Technology Kanpur", "city": "Kanpur", "type": "IIT", "category": "Engineering" },
+        { "name": "Indian Institute of Technology BHU Varanasi", "city": "Varanasi", "type": "IIT", "category": "Engineering" },
+        { "name": "IIM Lucknow", "city": "Lucknow", "type": "IIM", "category": "Management" },
+        { "name": "Banaras Hindu University", "city": "Varanasi", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "Aligarh Muslim University", "city": "Aligarh", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "MNNIT Allahabad", "city": "Prayagraj", "type": "NIT", "category": "Engineering" },
+        { "name": "IIIT Allahabad", "city": "Prayagraj", "type": "IIIT", "category": "Engineering" },
+        { "name": "University of Lucknow", "city": "Lucknow", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "HBTU Kanpur", "city": "Kanpur", "type": "State University", "category": "Engineering" },
+        { "name": "Amity University", "city": "Noida", "type": "Private University", "category": "Multi-Disciplinary" },
+        { "name": "Bennett University", "city": "Greater Noida", "type": "Private University", "category": "Multi-Disciplinary" },
+        { "name": "Shiv Nadar University", "city": "Greater Noida", "type": "Private University", "category": "Multi-Disciplinary" },
+        { "name": "IIIT Lucknow", "city": "Lucknow", "type": "IIIT", "category": "Engineering" },
+        { "name": "Galgotias University", "city": "Greater Noida", "type": "Private University", "category": "Multi-Disciplinary" },
+        { "name": "Babasaheb Bhimrao Ambedkar University", "city": "Lucknow", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "Dr. Ram Manohar Lohia National Law University", "city": "Lucknow", "type": "State University", "category": "Law" },
+        { "name": "AIIMS Rishikesh", "city": "Rishikesh", "type": "AIIMS", "category": "Medical" },
+        { "name": "SGPGIMS Lucknow", "city": "Lucknow", "type": "Government", "category": "Medical" },
+        { "name": "IIT Roorkee", "city": "Roorkee", "type": "IIT", "category": "Engineering" },
+        { "name": "Allahabad University", "city": "Prayagraj", "type": "Central University", "category": "Multi-Disciplinary" }
+      ]
+    },
+    {
+      "state": "Uttarakhand",
+      "code": "UK",
+      "colleges": [
+        { "name": "Indian Institute of Technology Roorkee", "city": "Roorkee", "type": "IIT", "category": "Engineering" },
+        { "name": "NIT Uttarakhand", "city": "Srinagar", "type": "NIT", "category": "Engineering" },
+        { "name": "IIM Kashipur", "city": "Kashipur", "type": "IIM", "category": "Management" },
+        { "name": "Hemwati Nandan Bahuguna Garhwal University", "city": "Srinagar", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "Graphic Era University", "city": "Dehradun", "type": "Private University", "category": "Engineering" },
+        { "name": "UPES Dehradun", "city": "Dehradun", "type": "Private University", "category": "Multi-Disciplinary" },
+        { "name": "DIT University", "city": "Dehradun", "type": "Private University", "category": "Engineering" },
+        { "name": "AIIMS Rishikesh", "city": "Rishikesh", "type": "AIIMS", "category": "Medical" },
+        { "name": "Kumaun University", "city": "Nainital", "type": "State University", "category": "Multi-Disciplinary" }
+      ]
+    },
+    {
+      "state": "West Bengal",
+      "code": "WB",
+      "colleges": [
+        { "name": "Indian Institute of Technology Kharagpur", "city": "Kharagpur", "type": "IIT", "category": "Engineering" },
+        { "name": "IIM Calcutta", "city": "Kolkata", "type": "IIM", "category": "Management" },
+        { "name": "Jadavpur University", "city": "Kolkata", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "University of Calcutta", "city": "Kolkata", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "NIT Durgapur", "city": "Durgapur", "type": "NIT", "category": "Engineering" },
+        { "name": "IIEST Shibpur", "city": "Howrah", "type": "Central Institute", "category": "Engineering" },
+        { "name": "Presidency University", "city": "Kolkata", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Visva-Bharati University", "city": "Santiniketan", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "IISER Kolkata", "city": "Kalyani", "type": "IISER", "category": "Science" },
+        { "name": "IIIT Kalyani", "city": "Kalyani", "type": "IIIT", "category": "Engineering" },
+        { "name": "West Bengal National University of Juridical Sciences", "city": "Kolkata", "type": "State University", "category": "Law" },
+        { "name": "St. Xavier's College Kolkata", "city": "Kolkata", "type": "Private", "category": "Arts & Science" },
+        { "name": "Heritage Institute of Technology", "city": "Kolkata", "type": "Private", "category": "Engineering" }
+      ]
+    },
+    {
+      "state": "Delhi",
+      "code": "DL",
+      "colleges": [
+        { "name": "Indian Institute of Technology Delhi", "city": "New Delhi", "type": "IIT", "category": "Engineering" },
+        { "name": "IIM Delhi (FMS)", "city": "New Delhi", "type": "Government", "category": "Management" },
+        { "name": "University of Delhi", "city": "New Delhi", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "Jawaharlal Nehru University", "city": "New Delhi", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "Jamia Millia Islamia", "city": "New Delhi", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "Delhi Technological University", "city": "New Delhi", "type": "State University", "category": "Engineering" },
+        { "name": "Netaji Subhas University of Technology", "city": "New Delhi", "type": "State University", "category": "Engineering" },
+        { "name": "IIIT Delhi", "city": "New Delhi", "type": "State University", "category": "Engineering" },
+        { "name": "IGDTUW", "city": "New Delhi", "type": "State University", "category": "Engineering" },
+        { "name": "National Law University Delhi", "city": "New Delhi", "type": "State University", "category": "Law" },
+        { "name": "AIIMS New Delhi", "city": "New Delhi", "type": "AIIMS", "category": "Medical" },
+        { "name": "Lady Shri Ram College", "city": "New Delhi", "type": "Private", "category": "Arts & Science" },
+        { "name": "St. Stephen's College", "city": "New Delhi", "type": "Private", "category": "Arts & Science" },
+        { "name": "Hindu College", "city": "New Delhi", "type": "Government", "category": "Arts & Science" },
+        { "name": "SRCC", "city": "New Delhi", "type": "Government", "category": "Commerce" },
+        { "name": "Miranda House", "city": "New Delhi", "type": "Government", "category": "Arts & Science" },
+        { "name": "Hansraj College", "city": "New Delhi", "type": "Government", "category": "Arts & Science" },
+        { "name": "IIT Delhi (Sonipat Campus)", "city": "New Delhi", "type": "IIT", "category": "Engineering" }
+      ]
+    },
+    {
+      "state": "Chandigarh",
+      "code": "CH",
+      "colleges": [
+        { "name": "Punjab Engineering College", "city": "Chandigarh", "type": "Deemed University", "category": "Engineering" },
+        { "name": "Panjab University", "city": "Chandigarh", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "PGIMER Chandigarh", "city": "Chandigarh", "type": "Central Institute", "category": "Medical" },
+        { "name": "UICET Chandigarh", "city": "Chandigarh", "type": "Government", "category": "Engineering" }
+      ]
+    },
+    {
+      "state": "Jammu and Kashmir",
+      "code": "JK",
+      "colleges": [
+        { "name": "NIT Srinagar", "city": "Srinagar", "type": "NIT", "category": "Engineering" },
+        { "name": "University of Kashmir", "city": "Srinagar", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "University of Jammu", "city": "Jammu", "type": "State University", "category": "Multi-Disciplinary" },
+        { "name": "Central University of Kashmir", "city": "Srinagar", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "Central University of Jammu", "city": "Jammu", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "IIT Jammu", "city": "Jammu", "type": "IIT", "category": "Engineering" },
+        { "name": "IIIT Srinagar", "city": "Srinagar", "type": "IIIT", "category": "Engineering" },
+        { "name": "IIM Jammu", "city": "Jammu", "type": "IIM", "category": "Management" }
+      ]
+    },
+    {
+      "state": "Ladakh",
+      "code": "LA",
+      "colleges": [
+        { "name": "University of Ladakh", "city": "Leh", "type": "State University", "category": "Multi-Disciplinary" }
+      ]
+    },
+    {
+      "state": "Puducherry",
+      "code": "PY",
+      "colleges": [
+        { "name": "Pondicherry University", "city": "Puducherry", "type": "Central University", "category": "Multi-Disciplinary" },
+        { "name": "NIT Puducherry", "city": "Karaikal", "type": "NIT", "category": "Engineering" },
+        { "name": "JIPMER Puducherry", "city": "Puducherry", "type": "Central Institute", "category": "Medical" },
+        { "name": "Pondicherry Engineering College", "city": "Puducherry", "type": "Government", "category": "Engineering" }
+      ]
+    },
+    {
+      "state": "Andaman and Nicobar Islands",
+      "code": "AN",
+      "colleges": [
+        { "name": "Dr. B.R. Ambedkar Institute of Technology", "city": "Port Blair", "type": "Government", "category": "Engineering" },
+        { "name": "Jawaharlal Nehru Rajkeeya Mahavidyalaya", "city": "Port Blair", "type": "Government", "category": "Arts & Science" }
+      ]
+    },
+    {
+      "state": "Lakshadweep",
+      "code": "LD",
+      "colleges": [
+        { "name": "Government Degree College Andrott", "city": "Andrott", "type": "Government", "category": "Arts & Science" }
+      ]
+    },
+    {
+      "state": "Dadra and Nagar Haveli and Daman and Diu",
+      "code": "DD",
+      "colleges": [
+        { "name": "Government Engineering College Dahod", "city": "Silvassa", "type": "Government", "category": "Engineering" },
+        { "name": "SSR College of Arts, Commerce and Science", "city": "Silvassa", "type": "Private", "category": "Arts & Science" }
+      ]
+    }
+  ]
+}
