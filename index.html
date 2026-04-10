@@ -21,6 +21,9 @@
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+  <!-- Theme Manager (Must run here to prevent flashes) -->
+  <script src="js/theme.js"></script>
+
   <style>
     /* ════════════════════════════════════════════
        TEA SPILL — Landing Page Styles
@@ -46,6 +49,18 @@
       --font: 'Plus Jakarta Sans', -apple-system, sans-serif;
       --radius: 16px;
       --radius-full: 9999px;
+    }
+
+    :root.light-theme {
+      --bg: #f8fafc;
+      --bg-card: #ffffff;
+      --bg-card-hover: #f1f5f9;
+      --text: #0f172a;
+      --text-secondary: #475569;
+      --text-muted: #94a3b8;
+      --amber-glow: rgba(245,158,11,0.2);
+      --purple-glow: rgba(168,85,247,0.2);
+      --border: rgba(0,0,0,0.1);
     }
 
     html { scroll-behavior: smooth; }
@@ -670,6 +685,7 @@
         <li><a href="#how-it-works">How It Works</a></li>
         <li><a href="#colleges">Colleges</a></li>
         <li><a href="#spills">Sample Tea</a></li>
+        <li><a href="#" data-action="toggle-theme" style="padding: 0.5rem 1rem; color: var(--text); display: inline-flex; align-items: center; justify-content: center; width: 44px; font-size: 1.1rem; border-radius: 8px;">☀️</a></li>
         <li><a href="app.html" class="nav-cta">Start Spilling ☕</a></li>
       </ul>
       <button class="nav-mobile-btn" id="mobile-menu-btn" aria-label="Menu">☰</button>
@@ -683,6 +699,7 @@
     <a href="#how-it-works" onclick="closeMobileMenu()">How It Works</a>
     <a href="#colleges" onclick="closeMobileMenu()">Colleges</a>
     <a href="#spills" onclick="closeMobileMenu()">Sample Tea</a>
+    <a href="#" data-action="toggle-theme" onclick="closeMobileMenu()">☀️ Light Mode</a>
     <a href="app.html" class="btn-hero btn-hero-primary" style="margin-top:12px">Start Spilling ☕</a>
   </div>
 

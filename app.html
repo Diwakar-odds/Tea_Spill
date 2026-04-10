@@ -13,6 +13,9 @@
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 
+  <!-- Theme Manager (Must run here to prevent flashes) -->
+  <script src="js/theme.js"></script>
+
   <link rel="stylesheet" href="css/index.css" />
   <link rel="stylesheet" href="css/components.css" />
   <link rel="stylesheet" href="css/pages.css" />
@@ -110,6 +113,9 @@
       </a></li>
     </ul>
     <div class="sidebar-footer">
+      <button class="btn-ghost" data-action="toggle-theme" style="width: 100%; justify-content: center; margin-bottom: var(--space-md);">
+        ☀️ Light Mode
+      </button>
       <button class="btn-spill-big" id="btn-new-spill-sidebar" data-action="new-spill">
         <span>☕</span> Spill Tea
       </button>
