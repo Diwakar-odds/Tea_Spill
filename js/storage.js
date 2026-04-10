@@ -117,23 +117,24 @@ const Storage = {
     spills.unshift(spill);
     this.saveSpills(spills);
 
-    // [PocketBase] Background Sync: Push new spill to cloud
-    if (API.isLive && API.pb) {
-      // Don't await, let it run in background
-      API.pb.collection('spills').create({
-        spillId: spill.id,
+    // [Supabase] Background Sync: Push new spill to cloud
+    if (API.isLive && API.client) {
+      API.client.from('spills').insert([{
+        spill_id: spill.id,
         title: spill.title,
         body: spill.body,
         category: spill.category,
         template: spill.template,
         alias: spill.alias,
-        aliasEmoji: spill.aliasEmoji,
-        collegeId: spill.collegeId,
+        alias_emoji: spill.aliasEmoji,
+        college_id: spill.collegeId,
         date: spill.date,
-        isSelfDestruct: spill.isSelfDestruct || false,
+        is_self_destruct: spill.isSelfDestruct || false,
         reactions: spill.reactions || { cold: 0, warm: 0, hot: 0, fire: 0, nuclear: 0 },
         comments: spill.comments || []
-      }).catch(err => console.warn('[Storage] Failed to push spill to cloud:', err));
+      }]).then(({ error }) => {
+        if (error) console.warn('[Storage] Failed to push spill to Supabase:', error);
+      });
     }
 
     return spills;
@@ -144,38 +145,44 @@ const Storage = {
     spills = spills.filter(s => s.id !== spillId);
     this.saveSpills(spills);
     
-    // [PocketBase] Background Sync: Remove from cloud
-    if (API.isLive && API.pb) {
-      API.pb.collection('spills').getFirstListItem(`spillId="${spillId}"`)
-        .then(record => API.pb.collection('spills').delete(record.id))
-        .catch(err => console.warn('[Storage] Failed to delete spill from cloud:', err));
+    // [Supabase] Background Sync: Remove from cloud
+    if (API.isLive && API.client) {
+      API.client.from('spills').delete().eq('spill_id', spillId)
+        .then(({ error }) => {
+          if (error) console.warn('[Storage] Failed to delete spill from Supabase:', error);
+        });
     }
 
     return spills;
   },
 
   /**
-   * [PocketBase] Fetch latest spills from the cloud and update local cache.
+   * [Supabase] Fetch latest spills from the cloud and update local cache.
    * This allows the UI to remain instantaneous using local data,
    * while getting fresh data in the background.
    */
   async syncSpillsFromCloud() {
-    if (!API.isLive || !API.pb) return;
+    if (!API.isLive || !API.client) return;
     try {
-      const records = await API.pb.collection('spills').getFullList({ sort: '-created' });
+      const { data, error } = await API.client.from('spills').select('*').order('created_at', { ascending: false });
       
-      // Map PocketBase structure back to our local format
-      const cloudSpills = records.map(r => ({
-        id: r.spillId,
+      if (error) {
+        console.warn('[Storage] Supabase sync failed:', error);
+        return;
+      }
+
+      // Map Supabase structure back to our local JS camelCase format
+      const cloudSpills = data.map(r => ({
+        id: r.spill_id,
         title: r.title,
         body: r.body,
         category: r.category,
         template: r.template,
         alias: r.alias,
-        aliasEmoji: r.aliasEmoji,
-        collegeId: r.collegeId,
+        aliasEmoji: r.alias_emoji,
+        collegeId: r.college_id,
         date: r.date,
-        isSelfDestruct: r.isSelfDestruct,
+        isSelfDestruct: r.is_self_destruct,
         reactions: r.reactions,
         comments: r.comments
       }));
@@ -183,10 +190,10 @@ const Storage = {
       // Update local storage explicitly
       if (cloudSpills.length > 0) {
         this.saveSpills(cloudSpills);
-        console.log('[Storage] Live spills synced from cloud.');
+        console.log('[Storage] Live spills synced from Supabase.');
       }
     } catch (e) {
-      console.warn('[Storage] Background sync failed:', e);
+      console.warn('[Storage] Background sync exception:', e);
     }
   },
 

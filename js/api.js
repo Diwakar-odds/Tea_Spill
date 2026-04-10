@@ -1,77 +1,79 @@
 /* ═══════════════════════════════════════════════════
-   TEA SPILL ☕ — PocketBase API Layer
+   TEA SPILL ☕ — Supabase API Layer
    Handles database connection and anonymous auth.
    ═══════════════════════════════════════════════════ */
 
 'use strict';
 
 const API = {
-  // TODO: Replace this with your actual PocketHost URL once you create it
-  // Example: 'https://teaspill.pockethost.io'
-  PB_URL: 'https://APP_URL_HERE.pockethost.io',
-  pb: null,
+  // TODO: Replace these with your actual Supabase URL and ANON Key
+  // Example: 'https://xyz.supabase.co'
+  SUPABASE_URL: 'https://YOUR_PROJECT.supabase.co',
+  SUPABASE_KEY: 'YOUR_ANON_KEY',
+  
+  client: null,
   isLive: false,
 
   init() {
     try {
-      if (typeof PocketBase !== 'undefined') {
-        this.pb = new PocketBase(this.PB_URL);
-        
+      if (typeof supabase !== 'undefined') {
         // If the URL is actually configured, we are running in Live Mode
-        if (this.PB_URL !== 'https://APP_URL_HERE.pockethost.io') {
+        if (this.SUPABASE_URL !== 'https://YOUR_PROJECT.supabase.co') {
+          this.client = supabase.createClient(this.SUPABASE_URL, this.SUPABASE_KEY);
           this.isLive = true;
-          console.log('[API] Connected to PocketBase Cloud Database.');
+          console.log('[API] Connected to Supabase Cloud Database.');
         } else {
-          console.warn('[API] PocketBase URL not set. Running in Local Mode.');
+          console.warn('[API] Supabase URL not set. Running in Local Mode.');
         }
       }
     } catch (e) {
-      console.warn('[API] Failed to initialize PocketBase SDK.', e);
+      console.warn('[API] Failed to initialize Supabase SDK.', e);
     }
   },
 
   /**
-   * Authenticates the user anonymously.
-   * In PocketBase, we achieve this by auto-generating a unique username/password
-   * for first-time visitors and saving those credentials securely in localStorage.
+   * Authenticates the user silently.
+   * Supabase expects a true Identity for Row Level Security.
+   * We generate a random username and register them silently.
    */
   async authenticateUser(alias, emoji) {
     if (!this.isLive) return true; // Pretend it worked if in local mode
 
     try {
-      // 1. Check if we already have credentials stored from a previous session
-      const storedCreds = localStorage.getItem('teaspill_pb_auth');
+      // 1. Check if we already have credentials stored
+      const storedCreds = localStorage.getItem('teaspill_sb_auth');
       
       if (storedCreds) {
-        // We are a returning user. Just log back in.
-        const { username, password } = JSON.parse(storedCreds);
-        await this.pb.collection('users').authWithPassword(username, password);
+        // We already created an identity on the server, just use the local cache to remember who we are.
+        // For a more advanced setup, you could use true Supabase Auth tokens here.
         return true;
       }
 
-      // 2. We are a NEW user. Generate a random identity.
+      // 2. We are a NEW user. Generate a random identity
       const rawUsername = 'user_' + Math.random().toString(36).substr(2, 9);
-      const rawPassword = Math.random().toString(36).substr(2, 12) + '!A'; // meets PB complexity rules
-
-      // Create the record in PocketBase
-      await this.pb.collection('users').create({
+      
+      // We manually insert them into our 'users' public table 
+      // (This bypasses needing them to type an email/password)
+      const { data, error } = await this.client.from('users').insert([{
         username: rawUsername,
-        password: rawPassword,
-        passwordConfirm: rawPassword,
         alias: alias,
-        aliasEmoji: emoji,
-        teaPoints: 5,
+        alias_emoji: emoji,
+        tea_points: 5,
         badges: ['first_visit']
-      });
+      }]).select();
 
-      // Login immediately with the new account
-      await this.pb.collection('users').authWithPassword(rawUsername, rawPassword);
+      if (error) {
+        console.error('[API Auth] Failed to register user to Supabase:', error);
+        return false;
+      }
 
-      // Save credentials to browser memory so they stay logged in forever
-      localStorage.setItem('teaspill_pb_auth', JSON.stringify({
-        username: rawUsername,
-        password: rawPassword
-      }));
+      // Save credentials to browser memory so we know who we are next time
+      if (data && data[0]) {
+        localStorage.setItem('teaspill_sb_auth', JSON.stringify({
+          userId: data[0].id,
+          username: rawUsername
+        }));
+      }
 
       return true;
 
