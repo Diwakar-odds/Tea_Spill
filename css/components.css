@@ -24,6 +24,13 @@
   transform: translateY(-1px);
   box-shadow: 0 0 30px var(--amber-glow);
 }
+.btn:disabled, .btn[disabled] {
+  opacity: 0.4;
+  cursor: not-allowed;
+  pointer-events: none;
+  transform: none;
+  box-shadow: none;
+}
 .btn-ghost {
   background: transparent;
   border: 1px solid var(--border-default);

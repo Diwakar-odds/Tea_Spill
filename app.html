@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tea Spill ☕ — India's Campus Gossip Platform</title>
+  <meta name="description" content="Anonymously spill and read the hottest campus gossip from colleges across India. Tea Spill — where every sip counts." />
+  <meta name="keywords" content="tea spill, college gossip, anonymous, campus stories, India" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="css/index.css" />
+  <link rel="stylesheet" href="css/components.css" />
+  <link rel="stylesheet" href="css/pages.css" />
+</head>
+<body>
+  <!-- ═══════════ SPLASH / LOADING ═══════════ -->
+  <div id="splash-screen" class="splash">
+    <div class="splash-content">
+      <div class="splash-cup">☕</div>
+      <h1 class="splash-title">Tea Spill</h1>
+      <p class="splash-tagline">brewing the hottest campus tea...</p>
+      <div class="splash-loader"><div class="splash-loader-fill"></div></div>
+    </div>
+  </div>
+
+  <!-- ═══════════ ONBOARDING / SIGN-IN ═══════════ -->
+  <div id="onboarding-screen" class="onboarding hidden">
+    <div class="onboarding-card">
+      <div class="onboarding-header">
+        <div style="font-size:3rem;margin-bottom:12px">☕</div>
+        <h1 style="font-size:1.8rem;font-weight:900;margin-bottom:4px;background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Welcome to Tea Spill</h1>
+        <p style="color:var(--text-tertiary);font-size:0.9rem">Set up your anonymous identity. No email. No phone. Just vibes.</p>
+      </div>
+
+      <div class="onboarding-body">
+        <!-- Emoji Picker -->
+        <div style="margin-bottom:24px">
+          <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:10px">Choose your avatar</label>
+          <div class="onboarding-emoji-grid" id="onboarding-emoji-grid"></div>
+        </div>
+
+        <!-- Alias Preview -->
+        <div style="margin-bottom:24px">
+          <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:10px">Your anonymous alias</label>
+          <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--bg-input);border:1px solid var(--border-default);border-radius:var(--radius-md)">
+            <span id="onboarding-alias-preview" style="font-weight:600;flex:1">👻 Shadow Chai</span>
+            <button type="button" id="onboarding-reroll" style="color:var(--amber);font-weight:600;font-size:0.85rem;background:none;border:none;cursor:pointer">🎲 Reroll</button>
+          </div>
+        </div>
+
+        <!-- College (optional) -->
+        <div style="margin-bottom:24px">
+          <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:10px">Your college <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
+          <select id="onboarding-college" style="width:100%;padding:12px 16px;background:var(--bg-input);border:1px solid var(--border-default);border-radius:var(--radius-md);color:var(--text-primary);font-size:0.9rem">
+            <option value="">Skip for now...</option>
+          </select>
+        </div>
+
+        <!-- Agreement -->
+        <div style="margin-bottom:28px;display:flex;align-items:flex-start;gap:10px">
+          <input type="checkbox" id="onboarding-agree" style="width:18px;height:18px;accent-color:var(--amber);margin-top:2px" />
+          <label for="onboarding-agree" style="font-size:0.8rem;color:var(--text-muted);line-height:1.4;cursor:pointer">
+            I agree to keep it respectful. No personal info, no bullying, no hate speech. Just tea. ☕
+          </label>
+        </div>
+
+        <button id="onboarding-enter" class="btn btn-primary btn-glow" style="width:100%;padding:14px 0;font-size:1rem" disabled>
+          Enter Tea Spill →
+        </button>
+
+        <p style="text-align:center;font-size:0.75rem;color:var(--text-muted);margin-top:16px">
+          Your identity resets every session. We never store personal data.
+        </p>
+      </div>
+    </div>
+  </div>
+
+
+  <!-- ═══════════ SIDEBAR NAV (Desktop) ═══════════ -->
+  <nav id="sidebar" class="sidebar">
+    <div class="sidebar-header">
+      <div class="logo" data-navigate="feed">
+        <span class="logo-icon">☕</span>
+        <span class="logo-text">Tea Spill</span>
+      </div>
+    </div>
+    <ul class="sidebar-nav">
+      <li><a href="#" data-navigate="feed" class="nav-link active" id="nav-feed">
+        <span class="nav-icon">🏠</span><span class="nav-label">Feed</span>
+      </a></li>
+      <li><a href="#" data-navigate="explore" class="nav-link" id="nav-explore">
+        <span class="nav-icon">🔍</span><span class="nav-label">Explore</span>
+      </a></li>
+      <li><a href="#" data-navigate="colleges" class="nav-link" id="nav-colleges">
+        <span class="nav-icon">🏫</span><span class="nav-label">Colleges</span>
+      </a></li>
+      <li><a href="#" data-navigate="pages" class="nav-link" id="nav-pages">
+        <span class="nav-icon">📄</span><span class="nav-label">Pages</span>
+      </a></li>
+      <li><a href="#" data-navigate="groups" class="nav-link" id="nav-groups">
+        <span class="nav-icon">👥</span><span class="nav-label">Groups</span>
+      </a></li>
+      <li><a href="#" data-navigate="channels" class="nav-link" id="nav-channels">
+        <span class="nav-icon">📢</span><span class="nav-label">Channels</span>
+      </a></li>
+    </ul>
+    <div class="sidebar-footer">
+      <button class="btn-spill-big" id="btn-new-spill-sidebar" data-action="new-spill">
+        <span>☕</span> Spill Tea
+      </button>
+      <a href="#" data-navigate="profile" class="nav-link profile-link" id="nav-profile">
+        <div class="avatar-small" id="sidebar-avatar">👻</div>
+        <div class="profile-info">
+          <span class="profile-name" id="sidebar-username">Anonymous</span>
+          <span class="profile-points" id="sidebar-points">0 🍵</span>
+        </div>
+      </a>
+    </div>
+  </nav>
+
+  <!-- ═══════════ MAIN CONTENT ═══════════ -->
+  <main id="main-content" class="main-content">
+    <!-- Top bar (mobile) -->
+    <header id="topbar" class="topbar">
+      <button class="topbar-menu" id="btn-menu" aria-label="Menu">☰</button>
+      <div class="topbar-logo" data-navigate="feed">
+        <span class="logo-icon">☕</span>
+        <span class="logo-text">Tea Spill</span>
+      </div>
+      <button class="topbar-action" id="btn-new-spill-topbar" data-action="new-spill" aria-label="New Spill">✍️</button>
+    </header>
+
+    <!-- PAGE CONTAINERS — only one visible at a time -->
+    <div id="page-feed" class="page active"></div>
+    <div id="page-explore" class="page"></div>
+    <div id="page-colleges" class="page"></div>
+    <div id="page-college-detail" class="page"></div>
+    <div id="page-pages" class="page"></div>
+    <div id="page-groups" class="page"></div>
+    <div id="page-channels" class="page"></div>
+    <div id="page-profile" class="page"></div>
+    <div id="page-reader" class="page"></div>
+  </main>
+
+  <!-- ═══════════ NEW SPILL MODAL ═══════════ -->
+  <div id="spill-modal" class="modal-overlay hidden">
+    <div class="modal spill-modal">
+      <div class="modal-header">
+        <h2>☕ Spill the Tea</h2>
+        <button class="modal-close" id="spill-modal-close" aria-label="Close">✕</button>
+      </div>
+      <form id="spill-form" class="spill-form">
+        <div class="form-group">
+          <label for="spill-college">College</label>
+          <select id="spill-college" required>
+            <option value="">Select your college...</option>
+          </select>
+          <button type="button" class="btn-text" id="btn-add-college">+ Add new college</button>
+        </div>
+        <div id="add-college-fields" class="add-college-fields hidden">
+          <input type="text" id="new-college-name" placeholder="College name" />
+          <input type="text" id="new-college-city" placeholder="City" />
+          <select id="new-college-state">
+            <option value="">State...</option>
+          </select>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label for="spill-department">Department</label>
+            <select id="spill-department">
+              <option value="">Select...</option>
+              <option value="CSE">CSE</option>
+              <option value="ECE">ECE</option>
+              <option value="ME">Mechanical</option>
+              <option value="CE">Civil</option>
+              <option value="EE">Electrical</option>
+              <option value="IT">IT</option>
+              <option value="BBA">BBA</option>
+              <option value="MBA">MBA</option>
+              <option value="BSc">BSc</option>
+              <option value="BCom">BCom</option>
+              <option value="BA">BA</option>
+              <option value="Law">Law</option>
+              <option value="Medical">Medical</option>
+              <option value="Other">Other</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="spill-section">Section / Year</label>
+            <input type="text" id="spill-section" placeholder="e.g. 2025 A" />
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="spill-category">Category</label>
+          <div class="category-chips" id="category-chips"></div>
+        </div>
+        <div class="form-group">
+          <label for="spill-title">Title</label>
+          <input type="text" id="spill-title" placeholder="Give your tea a catchy title..." maxlength="120" required />
+          <span class="char-count"><span id="title-chars">0</span>/120</span>
+        </div>
+        <div class="form-group">
+          <label for="spill-body">Spill it! 🍵</label>
+          <textarea id="spill-body" placeholder="Don't hold back... spill everything..." rows="6" required></textarea>
+        </div>
+        <div class="form-group">
+          <label>Your anonymous alias</label>
+          <div class="alias-picker">
+            <span class="alias-preview" id="alias-preview">👻 Shadow Chai</span>
+            <button type="button" class="btn-text" id="btn-reroll-alias">🎲 Reroll</button>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input type="checkbox" id="spill-timer" />
+            <span>Self-destruct after 24h ⏱️</span>
+          </label>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-ghost" id="spill-cancel">Cancel</button>
+          <button type="submit" class="btn btn-primary btn-glow">☕ Spill It!</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- ═══════════ MOBILE BOTTOM NAV ═══════════ -->
+  <nav id="bottom-nav" class="bottom-nav">
+    <a href="#" data-navigate="feed" class="bnav-link active" id="bnav-feed">
+      <span class="bnav-icon">🏠</span>
+      <span class="bnav-label">Feed</span>
+    </a>
+    <a href="#" data-navigate="explore" class="bnav-link" id="bnav-explore">
+      <span class="bnav-icon">🔍</span>
+      <span class="bnav-label">Explore</span>
+    </a>
+    <button class="bnav-spill" data-action="new-spill" id="bnav-spill">
+      <span>☕</span>
+    </button>
+    <a href="#" data-navigate="colleges" class="bnav-link" id="bnav-colleges">
+      <span class="bnav-icon">🏫</span>
+      <span class="bnav-label">Colleges</span>
+    </a>
+    <a href="#" data-navigate="profile" class="bnav-link" id="bnav-profile">
+      <span class="bnav-icon">👤</span>
+      <span class="bnav-label">Profile</span>
+    </a>
+  </nav>
+
+  <!-- ═══════════ TOAST ═══════════ -->
+  <div id="toast-container" class="toast-container"></div>
+
+  <!-- JS -->
+  <script src="js/data.js"></script>
+  <script src="js/storage.js"></script>
+  <script src="js/utils.js"></script>
+  <script src="js/feed.js"></script>
+  <script src="js/college.js"></script>
+  <script src="js/spill.js"></script>
+  <script src="js/reader.js"></script>
+  <script src="js/profile.js"></script>
+  <script src="js/explore.js"></script>
+  <script src="js/pages.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

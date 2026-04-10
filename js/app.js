@@ -1,28 +1,181 @@
 /* ═══════════════════════════════════════════════════
    TEA SPILL ☕ — Main Application Router
-   SPA navigation, page switching, delegated events.
+   SPA navigation, page switching, onboarding,
+   delegated events.
    ═══════════════════════════════════════════════════ */
 
 'use strict';
+
+const ONBOARDING_EMOJIS = [
+  '👻','🐱','🦊','🐺','🦅','🐍','🦉','🔮',
+  '⚡','🌙','🎭','🕶️','🥷','🐉','🦁','🐯',
+  '🦋','🌸','🎧','🎮','🧊','💎','🪐','🫧'
+];
 
 const App = {
   currentPage: 'feed',
   previousPage: 'feed',
   history: [],
 
+  /* ─── Onboarding state ─── */
+  _onboardingAlias: null,
+  _onboardingEmoji: null,
+
   async init() {
-    // Splash screen
+    // Load full college database first (needed by onboarding college picker)
+    await Storage.loadCollegesJSON();
+
+    // Splash screen → then decide: onboarding or straight to app
     setTimeout(() => {
       const splash = document.getElementById('splash-screen');
       if (splash) splash.classList.add('hidden');
+
+      const hasOnboarded = localStorage.getItem('ts_onboarded');
+      if (hasOnboarded) {
+        this._enterApp();
+      } else {
+        this._showOnboarding();
+      }
     }, 1800);
+  },
+
+  /* ═══════════════════════════════════════════
+     ONBOARDING
+     ═══════════════════════════════════════════ */
+
+  _showOnboarding() {
+    const screen = document.getElementById('onboarding-screen');
+    if (!screen) { this._enterApp(); return; }
+
+    // Hide the main app chrome while onboarding
+    document.getElementById('sidebar').style.display = 'none';
+    document.getElementById('main-content').style.display = 'none';
+    document.getElementById('bottom-nav').style.display = 'none';
+
+    // Generate initial alias
+    this._onboardingAlias = Utils.randomAlias();
+    this._onboardingEmoji = this._onboardingAlias.emoji;
+
+    // Populate emoji grid
+    const grid = document.getElementById('onboarding-emoji-grid');
+    grid.innerHTML = ONBOARDING_EMOJIS.map(e => `
+      <button type="button" class="onboarding-emoji-btn ${e === this._onboardingEmoji ? 'selected' : ''}" data-emoji="${e}">${e}</button>
+    `).join('');
+
+    // Update alias preview
+    this._updateOnboardingPreview();
+
+    // Populate college dropdown
+    const select = document.getElementById('onboarding-college');
+    const colleges = Storage.getColleges();
+    const grouped = {};
+    colleges.forEach(c => {
+      if (!grouped[c.state]) grouped[c.state] = [];
+      grouped[c.state].push(c);
+    });
+    Object.keys(grouped).sort().forEach(state => {
+      const optgroup = document.createElement('optgroup');
+      optgroup.label = state;
+      grouped[state].sort((a, b) => a.name.localeCompare(b.name)).forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.id;
+        opt.textContent = `${c.icon} ${c.name} — ${c.city}`;
+        optgroup.appendChild(opt);
+      });
+      select.appendChild(optgroup);
+    });
+
+    // Show the screen
+    screen.classList.remove('hidden');
+    screen.classList.add('visible');
+
+    // Bind events
+    this._bindOnboarding();
+  },
+
+  _bindOnboarding() {
+    // Emoji grid
+    document.getElementById('onboarding-emoji-grid').addEventListener('click', (e) => {
+      const btn = e.target.closest('.onboarding-emoji-btn');
+      if (!btn) return;
+      document.querySelectorAll('.onboarding-emoji-btn').forEach(b => b.classList.remove('selected'));
+      btn.classList.add('selected');
+      this._onboardingEmoji = btn.dataset.emoji;
+      this._updateOnboardingPreview();
+    });
+
+    // Reroll alias
+    document.getElementById('onboarding-reroll').addEventListener('click', () => {
+      this._onboardingAlias = Utils.randomAlias();
+      this._updateOnboardingPreview();
+    });
+
+    // Checkbox enables enter button
+    const checkbox = document.getElementById('onboarding-agree');
+    const enterBtn = document.getElementById('onboarding-enter');
+    checkbox.addEventListener('change', () => {
+      enterBtn.disabled = !checkbox.checked;
+    });
+
+    // Enter app
+    enterBtn.addEventListener('click', () => {
+      if (!checkbox.checked) return;
+      this._completeOnboarding();
+    });
+  },
+
+  _updateOnboardingPreview() {
+    const preview = document.getElementById('onboarding-alias-preview');
+    if (preview) {
+      preview.textContent = `${this._onboardingEmoji} ${this._onboardingAlias.name}`;
+    }
+  },
+
+  _completeOnboarding() {
+    // Save user with chosen identity
+    const user = Storage.getUser();
+    user.alias = this._onboardingAlias.name;
+    user.aliasEmoji = this._onboardingEmoji;
+
+    // Save college preference if selected
+    const collegeSelect = document.getElementById('onboarding-college');
+    if (collegeSelect.value) {
+      user.defaultCollege = collegeSelect.value;
+    }
+
+    // Grant first_visit badge
+    if (!user.badges.includes('first_visit')) {
+      user.badges.push('first_visit');
+      user.teaPoints += 5;
+    }
+
+    Storage.saveUser(user);
+    localStorage.setItem('ts_onboarded', '1');
+
+    // Hide onboarding with animation
+    const screen = document.getElementById('onboarding-screen');
+    screen.classList.remove('visible');
+    screen.classList.add('hidden');
+
+    // Show the app
+    setTimeout(() => {
+      this._enterApp();
+    }, 500);
+  },
+
+  /* ═══════════════════════════════════════════
+     ENTER APP (post-onboarding)
+     ═══════════════════════════════════════════ */
+
+  _enterApp() {
+    // Restore app chrome visibility
+    document.getElementById('sidebar').style.display = '';
+    document.getElementById('main-content').style.display = '';
+    document.getElementById('bottom-nav').style.display = '';
 
     // Initialize user
     const user = Storage.getUser();
     Storage.saveUser(user);
-
-    // Load full college database
-    await Storage.loadCollegesJSON();
 
     // Initialize spill module
     Spill.init();
@@ -32,6 +185,10 @@ const App = {
     // Default page
     this.navigate('feed');
   },
+
+  /* ═══════════════════════════════════════════
+     NAVIGATION
+     ═══════════════════════════════════════════ */
 
   /**
    * Navigate to a page with optional data payload.

@@ -195,6 +195,99 @@ ul, ol { list-style: none; }
   100% { width: 100%; }
 }
 
+/* ─── Onboarding Screen ─── */
+.onboarding {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: var(--bg-primary);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-xl);
+  transition: opacity 0.5s ease, visibility 0.5s ease;
+  overflow-y: auto;
+}
+.onboarding.hidden {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.onboarding.visible {
+  opacity: 1;
+  visibility: visible;
+}
+.onboarding-card {
+  width: 100%;
+  max-width: 440px;
+  background: var(--bg-card);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-xl);
+  padding: var(--space-3xl) var(--space-2xl);
+  animation: modal-in 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  box-shadow: var(--shadow-lg);
+  position: relative;
+  overflow: hidden;
+}
+.onboarding-card::before {
+  content: '';
+  position: absolute;
+  top: -100px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 400px;
+  height: 200px;
+  background: radial-gradient(ellipse, var(--amber-glow) 0%, transparent 70%);
+  pointer-events: none;
+}
+.onboarding-header {
+  text-align: center;
+  margin-bottom: var(--space-2xl);
+  position: relative;
+  z-index: 1;
+}
+.onboarding-body {
+  position: relative;
+  z-index: 1;
+}
+.onboarding-emoji-grid {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 6px;
+}
+.onboarding-emoji-btn {
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: var(--radius-md);
+  font-size: 1.3rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-input);
+  border: 2px solid transparent;
+  transition: all 0.15s;
+  cursor: pointer;
+}
+.onboarding-emoji-btn:hover {
+  background: var(--amber-soft);
+  border-color: var(--border-hover);
+  transform: scale(1.1);
+}
+.onboarding-emoji-btn.selected {
+  background: var(--amber-glow);
+  border-color: var(--amber);
+  transform: scale(1.1);
+  box-shadow: 0 0 12px var(--amber-glow);
+}
+@media (max-width: 480px) {
+  .onboarding-emoji-grid {
+    grid-template-columns: repeat(6, 1fr);
+  }
+  .onboarding-card {
+    padding: var(--space-2xl) var(--space-lg);
+  }
+}
+
 /* ─── Sidebar ─── */
 .sidebar {
   position: fixed;
