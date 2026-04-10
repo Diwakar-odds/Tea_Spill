@@ -131,7 +131,7 @@ const App = {
     }
   },
 
-  _completeOnboarding() {
+  async _completeOnboarding() {
     // Save user with chosen identity
     const user = Storage.getUser();
     user.alias = this._onboardingAlias.name;
@@ -152,6 +152,13 @@ const App = {
     Storage.saveUser(user);
     localStorage.setItem('ts_onboarded', '1');
 
+    // Authenticate with PocketBase API
+    const enterBtn = document.getElementById('onboarding-enter');
+    const originalText = enterBtn.innerHTML;
+    enterBtn.innerHTML = 'Brewing... ☕';
+    await API.authenticateUser(user.alias, user.aliasEmoji);
+    enterBtn.innerHTML = originalText;
+
     // Hide onboarding with animation
     const screen = document.getElementById('onboarding-screen');
     screen.classList.remove('visible');
@@ -167,15 +174,19 @@ const App = {
      ENTER APP (post-onboarding)
      ═══════════════════════════════════════════ */
 
-  _enterApp() {
+  async _enterApp() {
     // Restore app chrome visibility
     document.getElementById('sidebar').style.display = '';
     document.getElementById('main-content').style.display = '';
     document.getElementById('bottom-nav').style.display = '';
 
-    // Initialize user
+    // Initialize user and ensure authenticated
     const user = Storage.getUser();
     Storage.saveUser(user);
+    await API.authenticateUser(user.alias, user.aliasEmoji);
+
+    // Initial background sync from PocketBase
+    await Storage.syncSpillsFromCloud();
 
     // Initialize spill module
     Spill.init();

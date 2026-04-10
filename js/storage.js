@@ -108,12 +108,34 @@ const Storage = {
     return stored;
   },
 
-  saveSpills(spills) { this.set('spills', spills); },
+  saveSpills(spills) { 
+    this.set('spills', spills); 
+  },
 
   addSpill(spill) {
     const spills = this.getSpills();
     spills.unshift(spill);
     this.saveSpills(spills);
+
+    // [PocketBase] Background Sync: Push new spill to cloud
+    if (API.isLive && API.pb) {
+      // Don't await, let it run in background
+      API.pb.collection('spills').create({
+        spillId: spill.id,
+        title: spill.title,
+        body: spill.body,
+        category: spill.category,
+        template: spill.template,
+        alias: spill.alias,
+        aliasEmoji: spill.aliasEmoji,
+        collegeId: spill.collegeId,
+        date: spill.date,
+        isSelfDestruct: spill.isSelfDestruct || false,
+        reactions: spill.reactions || { cold: 0, warm: 0, hot: 0, fire: 0, nuclear: 0 },
+        comments: spill.comments || []
+      }).catch(err => console.warn('[Storage] Failed to push spill to cloud:', err));
+    }
+
     return spills;
   },
 
@@ -121,7 +143,51 @@ const Storage = {
     let spills = this.getSpills();
     spills = spills.filter(s => s.id !== spillId);
     this.saveSpills(spills);
+    
+    // [PocketBase] Background Sync: Remove from cloud
+    if (API.isLive && API.pb) {
+      API.pb.collection('spills').getFirstListItem(`spillId="${spillId}"`)
+        .then(record => API.pb.collection('spills').delete(record.id))
+        .catch(err => console.warn('[Storage] Failed to delete spill from cloud:', err));
+    }
+
     return spills;
+  },
+
+  /**
+   * [PocketBase] Fetch latest spills from the cloud and update local cache.
+   * This allows the UI to remain instantaneous using local data,
+   * while getting fresh data in the background.
+   */
+  async syncSpillsFromCloud() {
+    if (!API.isLive || !API.pb) return;
+    try {
+      const records = await API.pb.collection('spills').getFullList({ sort: '-created' });
+      
+      // Map PocketBase structure back to our local format
+      const cloudSpills = records.map(r => ({
+        id: r.spillId,
+        title: r.title,
+        body: r.body,
+        category: r.category,
+        template: r.template,
+        alias: r.alias,
+        aliasEmoji: r.aliasEmoji,
+        collegeId: r.collegeId,
+        date: r.date,
+        isSelfDestruct: r.isSelfDestruct,
+        reactions: r.reactions,
+        comments: r.comments
+      }));
+
+      // Update local storage explicitly
+      if (cloudSpills.length > 0) {
+        this.saveSpills(cloudSpills);
+        console.log('[Storage] Live spills synced from cloud.');
+      }
+    } catch (e) {
+      console.warn('[Storage] Background sync failed:', e);
+    }
   },
 
   /* ─── Colleges ─── */
