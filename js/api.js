@@ -9,9 +9,9 @@ const API = {
   // TODO: Replace these with your actual Supabase URL and ANON Key
   SUPABASE_URL: 'https://zcxpcozoblyjwquqnwoc.supabase.co',
   SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjeHBjb3pvYmx5andxdXFud29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4NDU3MzQsImV4cCI6MjA5MTQyMTczNH0.WC77QdODgBNYXtRjl3EEjnzMJgsPP38dwwZtjyPHPsE',
-  
+
   // TODO: Replace with your Google OAuth Web Client ID
-  GOOGLE_CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID',
+  GOOGLE_CLIENT_ID: '426631892589-gf3ldbjt0cuh2pu63ghes7v4s8iuhqi9.apps.googleusercontent.com',
 
   client: null,
   isLive: false,
@@ -70,7 +70,7 @@ const API = {
   async _handleGoogleCallback(response) {
     const loginScreen = document.getElementById('login-screen');
     if (loginScreen) {
-       loginScreen.innerHTML = '<div style="text-align:center;padding:40px;color:white;font-size:1.2rem;">Authenticating... ☕</div>';
+      loginScreen.innerHTML = '<div style="text-align:center;padding:40px;color:white;font-size:1.2rem;">Authenticating... ☕</div>';
     }
 
     try {
@@ -79,9 +79,9 @@ const API = {
         token: response.credential
       });
       if (error) throw error;
-      
+
       // Successfully authenticated! Re-trigger App.init() to route them properly
-      window.location.reload(); 
+      window.location.reload();
     } catch (error) {
       console.error('[API Auth] Google Token Sign-In Error:', error);
       alert("Failed to authenticate with Google via ID Token. Please check your Client ID or origin.");
