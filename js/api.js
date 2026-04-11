@@ -151,7 +151,6 @@ const API = {
         auth_id: userId,
         username: 'user_' + Math.random().toString(36).substr(2, 9),
         tea_points: 0,
-        badges: ['verified_student'],
         dob: dob,
         id_url: idFileUrl,
         verification_status: 'pending'

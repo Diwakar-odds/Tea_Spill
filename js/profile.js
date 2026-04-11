@@ -132,6 +132,7 @@ const Profile = {
         <h2 class="section-title" style="font-size:var(--font-size-lg);margin-bottom:var(--space-lg)">⚙️ Settings</h2>
         <div style="display:flex;flex-direction:column;gap:var(--space-md)">
           <button class="btn btn-ghost" onclick="Profile.rerollIdentity()">🎲 Reroll Anonymous Identity</button>
+          <button class="btn btn-ghost" onclick="API.signOut()" style="color:var(--text-secondary); border: 1px solid var(--border-default);">🚪 Sign Out</button>
           <button class="btn btn-ghost" onclick="Profile.clearData()" style="color:var(--rose)">🗑️ Clear All Data</button>
         </div>
       </div>
