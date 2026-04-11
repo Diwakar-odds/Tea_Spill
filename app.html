@@ -40,45 +40,26 @@
         <p style="color:var(--text-tertiary);font-size:0.9rem">Set up your anonymous identity. No email. No phone. Just vibes.</p>
       </div>
 
-      <div class="onboarding-body">
-        <!-- Emoji Picker -->
+      <div class="onboarding-body" id="verification-step-1">
+        <p style="margin-bottom:20px;font-size:0.9rem;color:var(--text-secondary)">To keep Tea Spill a safe community for students, we need to verify your age and student status.</p>
+        
+        <!-- Date of Birth -->
         <div style="margin-bottom:24px">
-          <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:10px">Choose your avatar</label>
-          <div class="onboarding-emoji-grid" id="onboarding-emoji-grid"></div>
+          <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:10px">Date of Birth</label>
+          <input type="date" id="onboarding-dob" style="width:100%;padding:12px 16px;background:var(--bg-input);border:1px solid var(--border-default);border-radius:var(--radius-md);color:var(--text-primary);font-size:0.9rem" required />
+          <p id="dob-error" style="color:var(--rose);font-size:0.8rem;margin-top:6px;display:none;">You must be 13 or older to use Tea Spill.</p>
         </div>
 
-        <!-- Alias Preview -->
+        <!-- Student ID Upload -->
         <div style="margin-bottom:24px">
-          <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:10px">Your anonymous alias</label>
-          <div style="display:flex;align-items:center;gap:12px;padding:14px 18px;background:var(--bg-input);border:1px solid var(--border-default);border-radius:var(--radius-md)">
-            <span id="onboarding-alias-preview" style="font-weight:600;flex:1">👻 Shadow Chai</span>
-            <button type="button" id="onboarding-reroll" style="color:var(--amber);font-weight:600;font-size:0.85rem;background:none;border:none;cursor:pointer">🎲 Reroll</button>
-          </div>
+          <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:10px">Upload College/School ID</label>
+          <input type="file" id="onboarding-id-file" accept="image/*" style="width:100%;padding:10px;background:var(--bg-input);border:1px solid var(--border-default);border-radius:var(--radius-md);color:var(--text-primary);font-size:0.9rem" required />
+          <p style="color:var(--text-muted);font-size:0.75rem;margin-top:6px;">Your ID is only used for verification and is permanently deleted afterwards.</p>
         </div>
 
-        <!-- College (optional) -->
-        <div style="margin-bottom:24px">
-          <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:10px">Your college <span style="color:var(--text-muted);font-weight:400">(optional)</span></label>
-          <select id="onboarding-college" style="width:100%;padding:12px 16px;background:var(--bg-input);border:1px solid var(--border-default);border-radius:var(--radius-md);color:var(--text-primary);font-size:0.9rem">
-            <option value="">Skip for now...</option>
-          </select>
-        </div>
-
-        <!-- Agreement -->
-        <div style="margin-bottom:28px;display:flex;align-items:flex-start;gap:10px">
-          <input type="checkbox" id="onboarding-agree" style="width:18px;height:18px;accent-color:var(--amber);margin-top:2px" />
-          <label for="onboarding-agree" style="font-size:0.8rem;color:var(--text-muted);line-height:1.4;cursor:pointer">
-            I agree to keep it respectful. No personal info, no bullying, no hate speech. Just tea. ☕
-          </label>
-        </div>
-
-        <button id="onboarding-enter" class="btn btn-primary btn-glow" style="width:100%;padding:14px 0;font-size:1rem" disabled>
-          Enter Tea Spill →
+        <button id="onboarding-submit-verification" class="btn btn-primary btn-glow" style="width:100%;padding:14px 0;font-size:1rem" disabled>
+          Submit for Verification →
         </button>
-
-        <p style="text-align:center;font-size:0.75rem;color:var(--text-muted);margin-top:16px">
-          Your identity resets every session. We never store personal data.
-        </p>
       </div>
     </div>
   </div>

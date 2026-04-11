@@ -22,19 +22,26 @@ const App = {
   _onboardingEmoji: null,
 
   async init() {
-    // Load full college database first (needed by onboarding college picker)
+    // Load full college database first
     await Storage.loadCollegesJSON();
 
     // Splash screen → then decide: onboarding or straight to app
-    setTimeout(() => {
+    setTimeout(async () => {
       const splash = document.getElementById('splash-screen');
       if (splash) splash.classList.add('hidden');
 
-      const hasOnboarded = localStorage.getItem('ts_onboarded');
-      if (hasOnboarded) {
-        this._enterApp();
-      } else {
+      const session = await API.getUserSession();
+      if (!session) {
+        window.location.href = 'index.html';
+        return;
+      }
+      this.session = session;
+
+      const verif = await API.checkVerificationStatus(session.user.id);
+      if (verif.status === 'unverified') {
         this._showOnboarding();
+      } else {
+        this._enterApp(verif.status);
       }
     }, 1800);
   },
@@ -52,39 +59,6 @@ const App = {
     document.getElementById('main-content').style.display = 'none';
     document.getElementById('bottom-nav').style.display = 'none';
 
-    // Generate initial alias
-    this._onboardingAlias = Utils.randomAlias();
-    this._onboardingEmoji = this._onboardingAlias.emoji;
-
-    // Populate emoji grid
-    const grid = document.getElementById('onboarding-emoji-grid');
-    grid.innerHTML = ONBOARDING_EMOJIS.map(e => `
-      <button type="button" class="onboarding-emoji-btn ${e === this._onboardingEmoji ? 'selected' : ''}" data-emoji="${e}">${e}</button>
-    `).join('');
-
-    // Update alias preview
-    this._updateOnboardingPreview();
-
-    // Populate college dropdown
-    const select = document.getElementById('onboarding-college');
-    const colleges = Storage.getColleges();
-    const grouped = {};
-    colleges.forEach(c => {
-      if (!grouped[c.state]) grouped[c.state] = [];
-      grouped[c.state].push(c);
-    });
-    Object.keys(grouped).sort().forEach(state => {
-      const optgroup = document.createElement('optgroup');
-      optgroup.label = state;
-      grouped[state].sort((a, b) => a.name.localeCompare(b.name)).forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.id;
-        opt.textContent = `${c.icon} ${c.name} — ${c.city}`;
-        optgroup.appendChild(opt);
-      });
-      select.appendChild(optgroup);
-    });
-
     // Show the screen
     screen.classList.remove('hidden');
     screen.classList.add('visible');
@@ -94,70 +68,60 @@ const App = {
   },
 
   _bindOnboarding() {
-    // Emoji grid
-    document.getElementById('onboarding-emoji-grid').addEventListener('click', (e) => {
-      const btn = e.target.closest('.onboarding-emoji-btn');
-      if (!btn) return;
-      document.querySelectorAll('.onboarding-emoji-btn').forEach(b => b.classList.remove('selected'));
-      btn.classList.add('selected');
-      this._onboardingEmoji = btn.dataset.emoji;
-      this._updateOnboardingPreview();
-    });
+    const dobInput = document.getElementById('onboarding-dob');
+    const fileInput = document.getElementById('onboarding-id-file');
+    const enterBtn = document.getElementById('onboarding-submit-verification');
+    const dobError = document.getElementById('dob-error');
 
-    // Reroll alias
-    document.getElementById('onboarding-reroll').addEventListener('click', () => {
-      this._onboardingAlias = Utils.randomAlias();
-      this._updateOnboardingPreview();
-    });
+    const checkValidity = () => {
+      let valid = true;
+      dobError.style.display = 'none';
+      if (!dobInput.value) { valid = false; }
+      else {
+        const dob = new Date(dobInput.value);
+        const diffMs = Date.now() - dob.getTime();
+        const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
+        if (age < 13) {
+          dobError.style.display = 'block';
+          valid = false;
+        }
+      }
+      if (!fileInput.files || fileInput.files.length === 0) valid = false;
+      enterBtn.disabled = !valid;
+    };
 
-    // Checkbox enables enter button
-    const checkbox = document.getElementById('onboarding-agree');
-    const enterBtn = document.getElementById('onboarding-enter');
-    checkbox.addEventListener('change', () => {
-      enterBtn.disabled = !checkbox.checked;
-    });
+    dobInput.addEventListener('change', checkValidity);
+    fileInput.addEventListener('change', checkValidity);
 
-    // Enter app
     enterBtn.addEventListener('click', () => {
-      if (!checkbox.checked) return;
-      this._completeOnboarding();
+      if (!enterBtn.disabled) this._completeOnboarding();
     });
-  },
-
-  _updateOnboardingPreview() {
-    const preview = document.getElementById('onboarding-alias-preview');
-    if (preview) {
-      preview.textContent = `${this._onboardingEmoji} ${this._onboardingAlias.name}`;
-    }
   },
 
   async _completeOnboarding() {
-    // Save user with chosen identity
-    const user = Storage.getUser();
-    user.alias = this._onboardingAlias.name;
-    user.aliasEmoji = this._onboardingEmoji;
+    const fileInput = document.getElementById('onboarding-id-file');
+    const dobInput = document.getElementById('onboarding-dob');
+    const enterBtn = document.getElementById('onboarding-submit-verification');
+    const file = fileInput.files[0];
 
-    // Save college preference if selected
-    const collegeSelect = document.getElementById('onboarding-college');
-    if (collegeSelect.value) {
-      user.defaultCollege = collegeSelect.value;
+    enterBtn.innerHTML = 'Uploading... ☕';
+    enterBtn.disabled = true;
+
+    // Upload ID
+    const fileUrl = await API.uploadCollegeId(file);
+    if (!fileUrl) {
+      alert("Failed to upload ID. Please try again.");
+      enterBtn.innerHTML = 'Submit for Verification →';
+      enterBtn.disabled = false;
+      return;
     }
 
-    // Grant first_visit badge
-    if (!user.badges.includes('first_visit')) {
-      user.badges.push('first_visit');
-      user.teaPoints += 5;
-    }
+    enterBtn.innerHTML = 'Verifying... ✨';
+    
+    // Submit details
+    await API.submitVerificationDetails(this.session.user.id, dobInput.value, fileUrl);
 
-    Storage.saveUser(user);
     localStorage.setItem('ts_onboarded', '1');
-
-    // Authenticate with PocketBase API
-    const enterBtn = document.getElementById('onboarding-enter');
-    const originalText = enterBtn.innerHTML;
-    enterBtn.innerHTML = 'Brewing... ☕';
-    await API.authenticateUser(user.alias, user.aliasEmoji);
-    enterBtn.innerHTML = originalText;
 
     // Hide onboarding with animation
     const screen = document.getElementById('onboarding-screen');
@@ -166,7 +130,7 @@ const App = {
 
     // Show the app
     setTimeout(() => {
-      this._enterApp();
+      this._enterApp('pending');
     }, 500);
   },
 
@@ -174,16 +138,19 @@ const App = {
      ENTER APP (post-onboarding)
      ═══════════════════════════════════════════ */
 
-  async _enterApp() {
+  async _enterApp(status = 'verified') {
     // Restore app chrome visibility
     document.getElementById('sidebar').style.display = '';
     document.getElementById('main-content').style.display = '';
     document.getElementById('bottom-nav').style.display = '';
 
-    // Initialize user and ensure authenticated
+    // Initialize user
     const user = Storage.getUser();
+    if (!user.alias) {
+      user.alias = Utils.randomAlias().name;
+      user.aliasEmoji = '👻';
+    }
     Storage.saveUser(user);
-    await API.authenticateUser(user.alias, user.aliasEmoji);
 
     // Initial background sync from PocketBase
     await Storage.syncSpillsFromCloud();
@@ -192,6 +159,20 @@ const App = {
     Spill.init();
     this._updateSidebarProfile();
     this._bindNavigation();
+
+    // Apply read-only mode for pending users
+    if (status !== 'verified') {
+      const spillBtns = document.querySelectorAll('[data-action="new-spill"]');
+      spillBtns.forEach(btn => {
+        btn.style.opacity = '0.5';
+        // Intercept clicks to block modal and show alert
+        btn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          Utils.showToast("Your account is pending verification. You can read, but you cannot spill tea yet!", "error");
+        }, { capture: true });
+      });
+    }
 
     // Default page
     this.navigate('feed');
