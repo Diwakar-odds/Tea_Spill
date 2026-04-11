@@ -7,9 +7,9 @@
 
 const API = {
   // TODO: Replace these with your actual Supabase URL and ANON Key
-  SUPABASE_URL: 'https://YOUR_PROJECT.supabase.co',
-  SUPABASE_KEY: 'YOUR_ANON_KEY',
-  
+  SUPABASE_URL: 'https://zcxpcozoblyjwquqnwoc.supabase.co',
+  SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjeHBjb3pvYmx5andxdXFud29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4NDU3MzQsImV4cCI6MjA5MTQyMTczNH0.WC77QdODgBNYXtRjl3EEjnzMJgsPP38dwwZtjyPHPsE',
+
   client: null,
   isLive: false,
 
@@ -39,7 +39,7 @@ const API = {
       window.location.reload();
       return true;
     }
-    
+
     try {
       const { data, error } = await this.client.auth.signInWithOAuth({
         provider: 'google',
@@ -84,7 +84,7 @@ const API = {
       .select('verification_status')
       .eq('auth_id', userId)
       .single();
-      
+
     if (error || !data) return { status: 'unverified' };
     return { status: data.verification_status };
   },
@@ -97,7 +97,7 @@ const API = {
       localStorage.setItem('teaspill_verification', 'pending');
       return true;
     }
-    
+
     // Check if user record exists
     const { data: existingUser } = await this.client
       .from('users')
@@ -139,7 +139,7 @@ const API = {
       // Simulate file upload
       return 'https://fake-storage.com/bucket/fake_id.png';
     }
-    
+
     const fileExt = file.name.split('.').pop();
     const fileName = `${Math.random()}.${fileExt}`;
     const filePath = `verification_ids/${fileName}`;
@@ -152,7 +152,7 @@ const API = {
       console.error('[API Auth] Upload failed:', uploadError);
       return null;
     }
-    
+
     const { data } = this.client.storage.from('verification_ids').getPublicUrl(filePath);
     return data.publicUrl;
   }
