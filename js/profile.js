@@ -18,6 +18,7 @@ const Profile = {
     const totalReactionsReceived = mySpills.reduce((sum, s) => sum + Utils.totalReactions(s.reactions), 0);
 
     // Badge logic
+    user.badges = user.badges || [];
     this._updateBadges(user, mySpills);
 
     const allBadges = [

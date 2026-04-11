@@ -32,7 +32,8 @@ const App = {
 
       const session = await API.getUserSession();
       if (!session) {
-        window.location.href = 'index.html';
+        // User isn't logged in, redirect them specifically to Google Auth
+        await API.signInWithGoogle();
         return;
       }
       this.session = session;
@@ -119,7 +120,13 @@ const App = {
     enterBtn.innerHTML = 'Verifying... ✨';
     
     // Submit details
-    await API.submitVerificationDetails(this.session.user.id, dobInput.value, fileUrl);
+    const success = await API.submitVerificationDetails(this.session.user.id, dobInput.value, fileUrl);
+
+    if (!success) {
+      enterBtn.innerHTML = 'Submit for Verification →';
+      enterBtn.disabled = false;
+      return;
+    }
 
     localStorage.setItem('ts_onboarded', '1');
 

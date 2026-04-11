@@ -9,6 +9,9 @@ const API = {
   // TODO: Replace these with your actual Supabase URL and ANON Key
   SUPABASE_URL: 'https://zcxpcozoblyjwquqnwoc.supabase.co',
   SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjeHBjb3pvYmx5andxdXFud29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4NDU3MzQsImV4cCI6MjA5MTQyMTczNH0.WC77QdODgBNYXtRjl3EEjnzMJgsPP38dwwZtjyPHPsE',
+  
+  // TODO: Replace with your Google OAuth Web Client ID
+  GOOGLE_CLIENT_ID: 'YOUR_GOOGLE_CLIENT_ID',
 
   client: null,
   isLive: false,
@@ -40,18 +43,49 @@ const API = {
       return true;
     }
 
+    // Hide main app chrome and show the Google login overlay
+    const loginScreen = document.getElementById('login-screen');
+    if (loginScreen && typeof google !== 'undefined') {
+      document.getElementById('sidebar').style.display = 'none';
+      document.getElementById('main-content').style.display = 'none';
+      document.getElementById('bottom-nav').style.display = 'none';
+      loginScreen.classList.remove('hidden');
+      loginScreen.classList.add('visible');
+
+      // Initialize Native Google Identity Services
+      google.accounts.id.initialize({
+        client_id: this.GOOGLE_CLIENT_ID,
+        callback: this._handleGoogleCallback.bind(this)
+      });
+
+      google.accounts.id.renderButton(
+        document.getElementById('google-btn-container'),
+        { theme: 'filled_black', size: 'large', shape: 'rectangular', text: 'signin_with' }
+      );
+    } else {
+      console.error("[API] Google Identity script not loaded or login screen missing.");
+    }
+  },
+
+  async _handleGoogleCallback(response) {
+    const loginScreen = document.getElementById('login-screen');
+    if (loginScreen) {
+       loginScreen.innerHTML = '<div style="text-align:center;padding:40px;color:white;font-size:1.2rem;">Authenticating... ☕</div>';
+    }
+
     try {
-      const { data, error } = await this.client.auth.signInWithOAuth({
+      const { data, error } = await this.client.auth.signInWithIdToken({
         provider: 'google',
-        options: {
-          redirectTo: window.location.origin + '/app.html'
-        }
+        token: response.credential
       });
       if (error) throw error;
-      return true;
+      
+      // Successfully authenticated! Re-trigger App.init() to route them properly
+      window.location.reload(); 
     } catch (error) {
-      console.error('[API Auth] Google Sign-In Error:', error);
-      return false;
+      console.error('[API Auth] Google Token Sign-In Error:', error);
+      alert("Failed to authenticate with Google via ID Token. Please check your Client ID or origin.");
+      window.location.reload();
     }
   },
 
@@ -126,6 +160,7 @@ const API = {
 
     if (result.error) {
       console.error('[API Auth] Failed to submit verification:', result.error);
+      alert('Database Insert Error: ' + result.error.message);
       return false;
     }
     return true;
