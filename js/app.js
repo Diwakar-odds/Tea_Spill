@@ -67,6 +67,9 @@ const App = {
       if (verif.status === 'unverified') {
         this._showOnboarding();
       } else {
+        if (typeof Utils !== 'undefined' && Utils.showToast) {
+          Utils.showToast("Welcome back! Automatically signed in.", "success");
+        }
         this._enterApp(verif.status);
       }
     }, 1800);

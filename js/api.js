@@ -135,12 +135,17 @@ const API = {
     // Check if user record exists
     const { data: existingUser } = await this.client
       .from('users')
-      .select('id')
+      .select('id, verification_status')
       .eq('auth_id', userId)
       .single();
 
     let result;
     if (existingUser) {
+      if (existingUser.verification_status !== 'unverified') {
+        alert('Warning: An identity is already registered for this account.');
+        return false;
+      }
+
       result = await this.client.from('users').update({
         dob: dob,
         id_url: idFileUrl,
