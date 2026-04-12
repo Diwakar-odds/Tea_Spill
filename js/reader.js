@@ -97,7 +97,15 @@ const Reader = {
               <div class="comment">
                 <div class="comment-avatar">${c.alias_emoji || c.emoji || '👻'}</div>
                 <div class="comment-content">
-                  <div class="comment-author">${Utils.escapeHtml(c.alias)}</div>
+                  <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <div class="comment-author">${Utils.escapeHtml(c.alias)}</div>
+                    ${(typeof window.App !== 'undefined' && App.isAdmin) ? `
+                      <div style="display:flex; gap:var(--space-xs);">
+                        <button class="btn-ghost" style="padding:0 var(--space-xs); font-size:12px; color:var(--rose);" onclick="Admin.nukeComment('${c.id}')" title="Delete Comment">🗑️</button>
+                        ${c.auth_id ? `<button class="btn-ghost" style="padding:0 var(--space-xs); font-size:12px; color:#ef4444;" onclick="Admin.banUser('${c.auth_id}')" title="Ban Author">🚫</button>` : ''}
+                      </div>
+                    ` : ''}
+                  </div>
                   <div class="comment-time">${c.time || 'A while ago'}</div>
                   <div class="comment-body">${Utils.escapeHtml(c.body)}</div>
                 </div>
