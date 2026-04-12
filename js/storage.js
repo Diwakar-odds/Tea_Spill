@@ -87,6 +87,7 @@ const Storage = {
       college: null,
       department: null,
       savedSpills: [],
+      mySpillIds: [],
       myReactions: {},
       followedPages: [],
       joinedGroups: [],

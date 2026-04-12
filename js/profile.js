@@ -14,7 +14,8 @@ const Profile = {
     const spills = Storage.getSpills();
 
     // Calculate derived stats
-    const mySpills = spills.filter(s => s.alias === user.alias);
+    user.mySpillIds = user.mySpillIds || [];
+    const mySpills = spills.filter(s => user.mySpillIds.includes(s.id));
     const totalReactionsReceived = mySpills.reduce((sum, s) => sum + Utils.totalReactions(s.reactions), 0);
 
     // Badge logic
@@ -81,25 +82,18 @@ const Profile = {
         ` : ''}
       </div>
 
-      <!-- Community Stats -->
+      <!-- My Spills -->
       <div style="margin-bottom:var(--space-3xl)">
-        <h2 class="section-title" style="font-size:var(--font-size-lg);margin-bottom:var(--space-lg)">🌐 Community</h2>
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:var(--space-md)">
-          <div class="explore-cat-card" style="cursor:default">
-            <span class="explore-cat-emoji">📄</span>
-            <div class="explore-cat-name">${user.followedPages?.length || 0}</div>
-            <div class="explore-cat-count">Pages</div>
-          </div>
-          <div class="explore-cat-card" style="cursor:default">
-            <span class="explore-cat-emoji">👥</span>
-            <div class="explore-cat-name">${user.joinedGroups?.length || 0}</div>
-            <div class="explore-cat-count">Groups</div>
-          </div>
-          <div class="explore-cat-card" style="cursor:default">
-            <span class="explore-cat-emoji">📢</span>
-            <div class="explore-cat-name">${user.subscribedChannels?.length || 0}</div>
-            <div class="explore-cat-count">Channels</div>
-          </div>
+        <h2 class="section-title" style="font-size:var(--font-size-lg);margin-bottom:var(--space-lg)">☕ My Spills (${mySpills.length})</h2>
+        <div class="feed-list" id="my-spills-list">
+          ${mySpills.length > 0
+            ? mySpills.reverse().map(s => Feed._spillCard(s, { isOwner: true })).join('')
+            : `<div class="empty-state">
+                 <div class="empty-state-icon">👻</div>
+                 <div class="empty-state-title">You're a ghost...</div>
+                 <div class="empty-state-text">You haven't posted any anonymous tea yet.</div>
+               </div>`
+          }
         </div>
       </div>
 
@@ -216,6 +210,23 @@ const Profile = {
       localStorage.clear();
       Utils.toast('🗑️ All data cleared!', 'info');
       location.reload();
+    }
+  },
+
+  deleteSpill(spillId) {
+    if (confirm('🚨 PANIC DELETE: Are you sure you want to permanently destroy this spill? It will vanish globally.')) {
+      // 1. Remove from local user array
+      const user = Storage.getUser();
+      user.mySpillIds = user.mySpillIds.filter(id => id !== spillId);
+      Storage.saveUser(user);
+
+      // 2. Remove globally (local Storage handles Supabase trigger internally)
+      Storage.removeSpill(spillId);
+
+      Utils.toast('🗑️ Spill destroyed.', 'info');
+      
+      // 3. Re-render UI entirely to wipe it from view
+      this.render();
     }
   }
 };

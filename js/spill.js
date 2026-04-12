@@ -319,6 +319,8 @@ const Spill = {
     Storage.addSpill(spill);
 
     // Update user stats
+    user.mySpillIds = user.mySpillIds || [];
+    user.mySpillIds.push(spill.id);
     user.spills += 1;
     user.teaPoints += 10;
     if (user.spills === 1 && !user.badges.includes('first_spill')) {

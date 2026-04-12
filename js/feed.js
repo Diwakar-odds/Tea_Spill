@@ -79,9 +79,10 @@ const Feed = {
   /**
    * Render a spill card. Used by Feed and other modules.
    * @param {Object} spill
+   * @param {Object} options
    * @returns {string} HTML
    */
-  _spillCard(spill) {
+  _spillCard(spill, options = {}) {
     const college = Utils.getCollege(spill.collegeId);
     const category = Utils.getCategory(spill.category);
     const temp = Utils.teaTemperature(spill.reactions);
@@ -107,19 +108,27 @@ const Feed = {
         <h3 class="spill-card-title">${Utils.escapeHtml(spill.title)}</h3>
         <p class="spill-card-body">${Utils.escapeHtml(spill.body)}</p>
 
-        <div class="spill-card-footer">
-          ${REACTIONS.map(r => `
-            <button class="reaction-btn ${myReactions.includes(r.id) ? 'active' : ''}"
-                    data-reaction="${r.id}" data-spill="${spill.id}"
-                    onclick="event.stopPropagation(); Feed.react('${spill.id}','${r.id}')">
-              <span>${r.emoji}</span>
-              <span>${Utils.formatNumber(spill.reactions?.[r.id] || 0)}</span>
+        <div class="spill-card-footer" style="display:flex; justify-content:space-between; align-items:center;">
+          <div style="display:flex; gap:var(--space-sm)">
+            ${REACTIONS.map(r => `
+              <button class="reaction-btn ${myReactions.includes(r.id) ? 'active' : ''}"
+                      data-reaction="${r.id}" data-spill="${spill.id}"
+                      onclick="event.stopPropagation(); Feed.react('${spill.id}','${r.id}')">
+                <span>${r.emoji}</span>
+                <span>${Utils.formatNumber(spill.reactions?.[r.id] || 0)}</span>
+              </button>
+            `).join('')}
+            <button class="reaction-btn" onclick="event.stopPropagation(); App.navigate('reader', '${spill.id}')">
+              <span>💬</span>
+              <span>${spill.comments ? spill.comments.length : 0}</span>
             </button>
-          `).join('')}
-          <button class="reaction-btn" onclick="event.stopPropagation(); App.navigate('reader', '${spill.id}')">
-            <span>💬</span>
-            <span>${spill.comments ? spill.comments.length : 0}</span>
-          </button>
+          </div>
+          
+          ${options.isOwner ? `
+            <button class="reaction-btn" style="color:var(--rose); background:rgba(244,63,94,0.1);" title="Panic Delete" onclick="event.stopPropagation(); Profile.deleteSpill('${spill.id}')">
+              🗑️ Delete
+            </button>
+          ` : ''}
         </div>
       </article>
     `;
