@@ -102,7 +102,10 @@ const Feed = {
           <div class="spill-temp ${temp.class}">${temp.label}</div>
         </div>
 
-        ${college ? `<span class="spill-college-tag">🏫 ${Utils.escapeHtml(college.name)}</span>` : ''}
+        ${(() => {
+          const cName = college ? college.name : (spill.collegeName || 'Unknown College');
+          return `<span class="spill-college-tag">🏫 ${Utils.escapeHtml(cName)}</span>`;
+        })()}
         ${category ? `<span class="spill-card-category">${category.emoji} ${category.name}</span>` : ''}
 
         <h3 class="spill-card-title">${Utils.escapeHtml(spill.title)}</h3>
@@ -158,6 +161,11 @@ const Feed = {
       spill.reactions[reactionId] = (spill.reactions[reactionId] || 0) + 1;
       user.teaPoints += 1;
       user.reactions += 1;
+      
+      // Cloud Engine Sync
+      if (window.API && API.isLive) {
+        API.reactToSpill(spillId, reactionId);
+      }
     }
 
     Storage.saveUser(user);

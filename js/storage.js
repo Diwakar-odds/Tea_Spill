@@ -187,17 +187,18 @@ const Storage = {
       // Map Supabase structure back to our local JS camelCase format
       const cloudSpills = data.map(r => ({
         id: r.spill_id,
+        collegeId: r.college_id,
+        collegeName: r.college_name,
+        department: r.department,
+        section: r.section,
+        category: r.category,
         title: r.title,
         body: r.body,
-        category: r.category,
-        template: r.template,
         alias: r.alias,
         aliasEmoji: r.alias_emoji,
-        collegeId: r.college_id,
-        date: r.date,
-        isSelfDestruct: r.is_self_destruct,
-        reactions: r.reactions,
-        comments: r.comments
+        selfDestruct: r.self_destruct,
+        reactions: r.reactions || { sip: 0, fire: 0, shook: 0, dead: 0, cap: 0 },
+        createdAt: new Date(r.created_at).getTime()
       }));
 
       // Update local storage explicitly

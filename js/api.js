@@ -225,6 +225,40 @@ const API = {
       console.error('[API] postComment error:', err);
       return false;
     }
+  },
+
+  async reactToSpill(spillId, reactionId) {
+    if (!this.isLive) return false;
+    try {
+      // Read-Modify-Write pattern for JSONB
+      const { data: fetch, error: fetchErr } = await this.client
+        .from('spills')
+        .select('reactions')
+        .eq('spill_id', spillId)
+        .single();
+      if (fetchErr) throw fetchErr;
+
+      const currentReactions = fetch.reactions || { sip: 0, fire: 0, shook: 0, dead: 0, cap: 0 };
+      
+      // Safety increment
+      if (typeof currentReactions[reactionId] === 'number') {
+        currentReactions[reactionId] += 1;
+      } else {
+        currentReactions[reactionId] = 1;
+      }
+
+      // Push back up
+      const { error: pushErr } = await this.client
+        .from('spills')
+        .update({ reactions: currentReactions })
+        .eq('spill_id', spillId);
+      if (pushErr) throw pushErr;
+      
+      return true;
+    } catch (err) {
+      console.error('[API] reactToSpill error:', err);
+      return false;
+    }
   }
 };
 
