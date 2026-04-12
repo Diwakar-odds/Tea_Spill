@@ -171,8 +171,13 @@ const API = {
     }
 
     if (result.error) {
+      if (result.error.code === '23505') {
+        console.warn('[API Auth] Profile already exists, ignoring duplicate insert.');
+        // If it's a duplicate key, they are already inserted! 
+        return true; 
+      }
       console.error('[API Auth] Failed to submit verification:', result.error);
-      alert('Database Insert Error: ' + result.error.message);
+      alert('Database Update Error: ' + result.error.message);
       return false;
     }
     return true;
