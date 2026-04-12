@@ -50,7 +50,7 @@ const Admin = {
     }
 
     try {
-      const { data, error } = await API.client.from('users').select('*').order('created_at', { ascending: false });
+      const { data, error } = await API.client.rpc('get_admin_users');
       if (error) throw error;
 
       if (!data || data.length === 0) {
@@ -85,6 +85,7 @@ const Admin = {
                 <td style="padding:10px 12px;">
                   <div style="font-weight:600; color:var(--text-primary);">${user.real_name || user.username || '—'}</div>
                   <div style="color:var(--text-tertiary); font-size:11px;">${user.username || ''}</div>
+                  <div style="color:var(--text-secondary); font-size:11px; font-weight:600; margin-top:4px;">📧 ${user.email || 'Missing'}</div>
                 </td>
                 <td style="padding:10px 12px; color:var(--text-secondary);">${user.college_name || '—'}</td>
                 <td style="padding:10px 12px; color:var(--text-tertiary);">${user.department || '—'}</td>
@@ -118,7 +119,7 @@ const Admin = {
     }
 
     try {
-      const { data, error } = await API.client.from('users').select('*').eq('verification_status', 'pending');
+      const { data, error } = await API.client.rpc('get_admin_users', { p_status: 'pending' });
       
       if (error) throw error;
 
@@ -158,6 +159,10 @@ const Admin = {
                   <tr>
                     <td style="color:var(--text-tertiary); padding:4px 8px 4px 0;">🏷️ Username</td>
                     <td style="color:var(--text-secondary);">${user.username || '—'}</td>
+                  </tr>
+                  <tr>
+                    <td style="color:var(--text-tertiary); padding:4px 8px 4px 0;">📧 Email</td>
+                    <td style="color:var(--text-secondary); font-weight:600;">${user.email || '—'}</td>
                   </tr>
                   <tr>
                     <td style="color:var(--text-tertiary); padding:4px 8px 4px 0;">🏫 College</td>
