@@ -128,20 +128,23 @@ const Storage = {
     this.saveSpills(spills);
 
     // [Supabase] Background Sync: Push new spill to cloud
-    if (API.isLive && API.client) {
+    if (window.API && API.client) {
+      const collegeObj = this.getColleges().find(c => c.id === spill.collegeId);
+      const cName = collegeObj ? collegeObj.name : 'Unknown College';
+
       API.client.from('spills').insert([{
         spill_id: spill.id,
+        college_id: spill.collegeId,
+        college_name: cName,
+        department: spill.department || null,
+        section: spill.section || null,
+        category: spill.category,
         title: spill.title,
         body: spill.body,
-        category: spill.category,
-        template: spill.template,
         alias: spill.alias,
         alias_emoji: spill.aliasEmoji,
-        college_id: spill.collegeId,
-        date: spill.date,
-        is_self_destruct: spill.isSelfDestruct || false,
-        reactions: spill.reactions || { cold: 0, warm: 0, hot: 0, fire: 0, nuclear: 0 },
-        comments: spill.comments || []
+        self_destruct: spill.selfDestruct || false,
+        reactions: { sip: 0, fire: 0, shook: 0, dead: 0, cap: 0 }
       }]).then(({ error }) => {
         if (error) console.warn('[Storage] Failed to push spill to Supabase:', error);
       });

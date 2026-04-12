@@ -47,6 +47,12 @@ const App = {
       await Storage.syncSpillsFromCloud();
 
       const verif = await API.checkVerificationStatus(session.user.id);
+      this.isAdmin = verif.isAdmin;
+
+      if (this.isAdmin) {
+        document.getElementById('admin-nav-item').style.display = 'block';
+      }
+
       if (verif.status === 'unverified') {
         this._showOnboarding();
       } else {
@@ -219,6 +225,7 @@ const App = {
       case 'channels':   Pages.renderChannels();      break;
       case 'profile':    Profile.render();           break;
       case 'reader':     Reader.render(data);        break;
+      case 'admin':      if(this.isAdmin) Admin.render(); break;
       default:
         Feed.render();
         page = 'feed';

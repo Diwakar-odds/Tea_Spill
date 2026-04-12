@@ -111,16 +111,16 @@ const API = {
   async checkVerificationStatus(userId) {
     if (!this.isLive) {
       const status = localStorage.getItem('teaspill_verification') || 'unverified';
-      return { status };
+      return { status, isAdmin: false };
     }
     const { data, error } = await this.client
       .from('users')
-      .select('verification_status')
+      .select('verification_status, is_admin')
       .eq('auth_id', userId)
       .single();
 
-    if (error || !data) return { status: 'unverified' };
-    return { status: data.verification_status };
+    if (error || !data) return { status: 'unverified', isAdmin: false };
+    return { status: data.verification_status, isAdmin: data.is_admin };
   },
 
   /**
@@ -189,6 +189,42 @@ const API = {
 
     const { data } = this.client.storage.from('verification_ids').getPublicUrl(filePath);
     return data.publicUrl;
+  },
+
+  /* ─── Comments & Interactions ─── */
+
+  async fetchComments(spillId) {
+    if (!this.isLive) return [];
+    try {
+      const { data, error } = await this.client
+        .from('comments')
+        .select('*')
+        .eq('spill_id', spillId)
+        .order('created_at', { ascending: true });
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error('[API] fetchComments error:', err);
+      return [];
+    }
+  },
+
+  async postComment(spillId, body, alias, aliasEmoji) {
+    if (!this.isLive) return false;
+    try {
+      const { error } = await this.client.from('comments').insert([{
+        auth_id: this.session.user.id,
+        spill_id: spillId,
+        body,
+        alias,
+        alias_emoji: aliasEmoji
+      }]);
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error('[API] postComment error:', err);
+      return false;
+    }
   }
 };
 

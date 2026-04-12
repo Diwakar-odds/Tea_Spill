@@ -9,13 +9,20 @@
 const Reader = {
   currentSpillId: null,
 
-  render(spillId) {
+  async render(spillId) {
     this.currentSpillId = spillId;
     const spills = Storage.getSpills();
     const spill = spills.find(s => s.id === spillId);
     if (!spill) {
       App.navigate('feed');
       return;
+    }
+
+    let cloudComments = [];
+    if (window.API && API.isLive) {
+      cloudComments = await API.fetchComments(spillId);
+    } else {
+      cloudComments = spill.comments || [];
     }
 
     const college = Utils.getCollege(spill.collegeId);
@@ -78,7 +85,7 @@ const Reader = {
 
         <!-- Comments -->
         <div class="comments-section">
-          <h2 class="comments-title">💬 Comments (${(spill.comments || []).length})</h2>
+          <h2 class="comments-title">💬 Comments (${cloudComments.length})</h2>
 
           <div class="comment-input-wrapper">
             <textarea id="comment-input" placeholder="Drop your take..." rows="2"></textarea>
@@ -86,12 +93,12 @@ const Reader = {
           </div>
 
           <div id="comments-list">
-            ${(spill.comments || []).map(c => `
+            ${cloudComments.map(c => `
               <div class="comment">
-                <div class="comment-avatar">${c.emoji}</div>
+                <div class="comment-avatar">${c.alias_emoji || c.emoji || '👻'}</div>
                 <div class="comment-content">
                   <div class="comment-author">${Utils.escapeHtml(c.alias)}</div>
-                  <div class="comment-time">${c.time}</div>
+                  <div class="comment-time">${c.time || 'A while ago'}</div>
                   <div class="comment-body">${Utils.escapeHtml(c.body)}</div>
                 </div>
               </div>
@@ -135,26 +142,27 @@ const Reader = {
     this.render(this.currentSpillId);
   },
 
-  addComment() {
+  async addComment() {
     const input = document.getElementById('comment-input');
     const body = input.value.trim();
     if (!body) return;
 
-    const spills = Storage.getSpills();
-    const spill = spills.find(s => s.id === this.currentSpillId);
-    if (!spill) return;
-
     const user = Storage.getUser();
-    const comment = {
-      alias: user.alias,
-      emoji: user.aliasEmoji,
-      body,
-      time: 'Just now'
-    };
+    input.value = '';
 
-    if (!spill.comments) spill.comments = [];
-    spill.comments.push(comment);
-    Storage.saveSpills(spills);
+    if (window.API && API.isLive) {
+      input.disabled = true;
+      const success = await API.postComment(this.currentSpillId, body, user.alias, user.aliasEmoji);
+      input.disabled = false;
+      if (!success) { Utils.toast('Failed to post comment', 'error'); return; }
+    } else {
+      // Local Fallback
+      const spills = Storage.getSpills();
+      const spill = spills.find(s => s.id === this.currentSpillId);
+      if (!spill.comments) spill.comments = [];
+      spill.comments.push({ alias: user.alias, emoji: user.aliasEmoji, body, time: 'Just now' });
+      Storage.saveSpills(spills);
+    }
 
     user.teaPoints += 2;
     Storage.saveUser(user);

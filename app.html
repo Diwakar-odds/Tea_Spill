@@ -107,6 +107,9 @@
       <li><a href="#" data-navigate="channels" class="nav-link" id="nav-channels">
         <span class="nav-icon">📢</span><span class="nav-label">Channels</span>
       </a></li>
+      <li id="admin-nav-item" style="display:none;"><a href="#" data-navigate="admin" class="nav-link" id="nav-admin">
+        <span class="nav-icon" style="filter:grayscale(0)">🛡️</span><span class="nav-label" style="color:var(--amber);font-weight:700">Verification</span>
+      </a></li>
     </ul>
     <div class="sidebar-footer">
       <button class="btn-ghost" data-action="toggle-theme" style="width: 100%; justify-content: center; margin-bottom: var(--space-md);">
@@ -147,6 +150,7 @@
     <div id="page-channels" class="page"></div>
     <div id="page-profile" class="page"></div>
     <div id="page-reader" class="page"></div>
+    <div id="page-admin" class="page"></div>
   </main>
 
   <!-- ═══════════ NEW SPILL MODAL ═══════════ -->
@@ -269,6 +273,7 @@
   <script src="js/profile.js"></script>
   <script src="js/explore.js"></script>
   <script src="js/pages.js"></script>
+  <script src="js/admin.js"></script>
   <script src="js/app.js"></script>
 </body>
 </html>
