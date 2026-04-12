@@ -57,7 +57,29 @@
 
       <div class="onboarding-body" id="verification-step-1">
         <p style="margin-bottom:20px;font-size:0.9rem;color:var(--text-secondary)">To keep Tea Spill a safe community for students, we need to verify your age and student status.</p>
+        <!-- Real Name -->
+        <div style="margin-bottom:20px">
+          <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:8px">Real Name (For Admin Verification Only)</label>
+          <input type="text" id="onboarding-realname" placeholder="John Doe" style="width:100%;padding:10px 16px;background:var(--bg-input);border:1px solid var(--border-default);border-radius:var(--radius-md);color:var(--text-primary);font-size:0.9rem" required />
+        </div>
+
+        <!-- College Info -->
+        <div style="margin-bottom:20px">
+          <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:8px">College / University Name</label>
+          <input type="text" id="onboarding-college" placeholder="e.g. VIT Vellore" style="width:100%;padding:10px 16px;background:var(--bg-input);border:1px solid var(--border-default);border-radius:var(--radius-md);color:var(--text-primary);font-size:0.9rem" required />
+        </div>
         
+        <div style="display:flex; gap:16px; margin-bottom:24px">
+          <div style="flex:1">
+            <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:8px">Department</label>
+            <input type="text" id="onboarding-department" placeholder="e.g. CSE" style="width:100%;padding:10px 16px;background:var(--bg-input);border:1px solid var(--border-default);border-radius:var(--radius-md);color:var(--text-primary);font-size:0.9rem" required />
+          </div>
+          <div style="flex:1">
+            <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:8px">Section / Year</label>
+            <input type="text" id="onboarding-section" placeholder="e.g. 2nd Year" style="width:100%;padding:10px 16px;background:var(--bg-input);border:1px solid var(--border-default);border-radius:var(--radius-md);color:var(--text-primary);font-size:0.9rem" />
+          </div>
+        </div>
+
         <!-- Date of Birth -->
         <div style="margin-bottom:24px">
           <label style="display:block;font-size:0.85rem;font-weight:600;color:var(--text-secondary);margin-bottom:10px">Date of Birth</label>

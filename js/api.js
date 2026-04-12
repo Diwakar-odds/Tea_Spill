@@ -124,9 +124,9 @@ const API = {
   },
 
   /**
-   * Called during onboarding after verifying age and College ID.
+   * Called during onboarding after verifying age, College ID, and parameters.
    */
-  async submitVerificationDetails(userId, dob, idFileUrl) {
+  async submitVerificationDetails(userId, dob, idFileUrl, realName, collegeName, department, section) {
     if (!this.isLive) {
       localStorage.setItem('teaspill_verification', 'pending');
       return true;
@@ -144,6 +144,10 @@ const API = {
       result = await this.client.from('users').update({
         dob: dob,
         id_url: idFileUrl,
+        real_name: realName,
+        college_name: collegeName,
+        department: department,
+        section: section,
         verification_status: 'pending'
       }).eq('auth_id', userId);
     } else {
@@ -153,6 +157,10 @@ const API = {
         tea_points: 0,
         dob: dob,
         id_url: idFileUrl,
+        real_name: realName,
+        college_name: collegeName,
+        department: department,
+        section: section,
         verification_status: 'pending'
       }]);
     }

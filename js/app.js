@@ -94,6 +94,10 @@ const App = {
   },
 
   _bindOnboarding() {
+    const nameInput = document.getElementById('onboarding-realname');
+    const collegeInput = document.getElementById('onboarding-college');
+    const deptInput = document.getElementById('onboarding-department');
+    const sectionInput = document.getElementById('onboarding-section');
     const dobInput = document.getElementById('onboarding-dob');
     const fileInput = document.getElementById('onboarding-id-file');
     const enterBtn = document.getElementById('onboarding-submit-verification');
@@ -102,6 +106,10 @@ const App = {
     const checkValidity = () => {
       let valid = true;
       dobError.style.display = 'none';
+      if (!nameInput.value.trim()) valid = false;
+      if (!collegeInput.value.trim()) valid = false;
+      if (!deptInput.value.trim()) valid = false;
+
       if (!dobInput.value) { valid = false; }
       else {
         const dob = new Date(dobInput.value);
@@ -116,6 +124,9 @@ const App = {
       enterBtn.disabled = !valid;
     };
 
+    nameInput.addEventListener('input', checkValidity);
+    collegeInput.addEventListener('input', checkValidity);
+    deptInput.addEventListener('input', checkValidity);
     dobInput.addEventListener('change', checkValidity);
     fileInput.addEventListener('change', checkValidity);
 
@@ -125,6 +136,11 @@ const App = {
   },
 
   async _completeOnboarding() {
+    const nameInput = document.getElementById('onboarding-realname').value.trim();
+    const collegeInput = document.getElementById('onboarding-college').value.trim();
+    const deptInput = document.getElementById('onboarding-department').value.trim();
+    const sectionInput = document.getElementById('onboarding-section').value.trim();
+    
     const fileInput = document.getElementById('onboarding-id-file');
     const dobInput = document.getElementById('onboarding-dob');
     const enterBtn = document.getElementById('onboarding-submit-verification');
@@ -144,14 +160,20 @@ const App = {
 
     enterBtn.innerHTML = 'Verifying... ✨';
     
-    // Submit details
-    const success = await API.submitVerificationDetails(this.session.user.id, dobInput.value, fileUrl);
+    // Submit All Details
+    const success = await API.submitVerificationDetails(this.session.user.id, dobInput.value, fileUrl, nameInput, collegeInput, deptInput, sectionInput);
 
     if (!success) {
       enterBtn.innerHTML = 'Submit for Verification →';
       enterBtn.disabled = false;
       return;
     }
+
+    // Cross-Device Sync Fix: Force push the freshly generated local alias to the Cloud!
+    const localProfile = Storage.getUser();
+    localProfile.collegeName = collegeInput;
+    localProfile.department = deptInput;
+    Storage.saveUser(localProfile);
 
     localStorage.setItem('ts_onboarded', '1');
 
