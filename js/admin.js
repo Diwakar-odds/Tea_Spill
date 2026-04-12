@@ -102,5 +102,51 @@ const Admin = {
       console.error(err);
       Utils.toast('Failed to reject. Check permissions.', 'error');
     }
+  },
+
+  /* ─── In-Place Moderation Actions ─── */
+
+  async nukeSpill(spillId) {
+    if (!confirm('🚨 NUKE THIS SPILL? This is permanent.')) return;
+    const success = await API.deleteSpill(spillId);
+    if (success) {
+      Utils.toast('💥 Spill deleted from server.', 'success');
+      // Update local storage to match
+      Storage.removeSpill(spillId);
+      if (typeof Feed !== 'undefined') Feed.render();
+      if (typeof window.App !== 'undefined' && App.currentPage === 'reader') App.navigate('feed');
+    } else {
+      Utils.toast('Failed to delete. Check permissions.', 'error');
+    }
+  },
+
+  async nukeComment(commentId) {
+    if (!confirm('🚨 NUKE THIS COMMENT? This is permanent.')) return;
+    const success = await API.deleteComment(commentId);
+    if (success) {
+      Utils.toast('💥 Comment deleted.', 'success');
+      if (typeof Reader !== 'undefined' && Reader.currentSpillId) {
+        Reader.render(Reader.currentSpillId); // Reload comments to clear it out
+      }
+    } else {
+      Utils.toast('Failed to delete comment.', 'error');
+    }
+  },
+
+  async banUser(authId) {
+    if (!authId) {
+      Utils.toast('Auth ID missing. Cannot ban.', 'error');
+      return;
+    }
+    if (!confirm('🚨 PERMANENTLY BAN THIS AUTHOR?')) return;
+    
+    // Warning: AuthID may not be directly available for anonymous spills unless we attach it.
+    // If the database returns authId on the spill payload, we can ban them.
+    const success = await API.banUser(authId);
+    if (success) {
+      Utils.toast('🚫 Author has been banned.', 'success');
+    } else {
+      Utils.toast('Failed to ban user.', 'error');
+    }
   }
 };

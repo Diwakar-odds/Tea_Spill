@@ -259,6 +259,45 @@ const API = {
       console.error('[API] reactToSpill error:', err);
       return false;
     }
+  },
+
+  /* ─── Admin Moderation Hooks ─── */
+
+  async deleteSpill(spillId) {
+    if (!this.isLive) return false;
+    try {
+      const { error } = await this.client.from('spills').delete().eq('spill_id', spillId);
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error('[API] deleteSpill error:', err);
+      return false;
+    }
+  },
+
+  async deleteComment(commentId) {
+    if (!this.isLive) return false;
+    try {
+      const { error } = await this.client.from('comments').delete().eq('id', commentId);
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error('[API] deleteComment error:', err);
+      return false;
+    }
+  },
+
+  async banUser(userId) {
+    if (!this.isLive) return false;
+    try {
+      // Provide the users table UUID instead of the auth_id
+      const { error } = await this.client.from('users').update({ verification_status: 'banned' }).eq('id', userId);
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error('[API] banUser error:', err);
+      return false;
+    }
   }
 };
 

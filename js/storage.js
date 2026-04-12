@@ -187,6 +187,7 @@ const Storage = {
       // Map Supabase structure back to our local JS camelCase format
       const cloudSpills = data.map(r => ({
         id: r.spill_id,
+        userId: r.user_id,
         collegeId: r.college_id,
         collegeName: r.college_name,
         department: r.department,

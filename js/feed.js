@@ -126,11 +126,23 @@ const Feed = {
               <span>${spill.comments ? spill.comments.length : 0}</span>
             </button>
           </div>
-          
           ${options.isOwner ? `
-            <button class="reaction-btn" style="color:var(--rose); background:rgba(244,63,94,0.1);" title="Panic Delete" onclick="event.stopPropagation(); Profile.deleteSpill('${spill.id}')">
+            <button class="reaction-btn" style="color:var(--rose); background:rgba(244,63,94,0.1);" title="Delete" onclick="event.stopPropagation(); Profile.deleteSpill('${spill.id}')">
               🗑️ Delete
             </button>
+          ` : ''}
+          
+          ${(typeof window.App !== 'undefined' && App.isAdmin && !options.isOwner) ? `
+            <div style="display:flex; gap:var(--space-xs); margin-left:auto;">
+              <button class="reaction-btn" style="color:var(--rose); background:rgba(244,63,94,0.1);" title="Nuke Spill" onclick="event.stopPropagation(); Admin.nukeSpill('${spill.id}')">
+                🗑️ Nuke
+              </button>
+              ${spill.userId ? `
+              <button class="reaction-btn" style="color:#ef4444; background:rgba(239,68,68,0.1);" title="Ban Author" onclick="event.stopPropagation(); Admin.banUser('${spill.userId}')">
+                🚫 Ban
+              </button>
+              ` : ''}
+            </div>
           ` : ''}
         </div>
       </article>

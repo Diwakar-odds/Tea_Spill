@@ -53,6 +53,17 @@ const App = {
         document.getElementById('admin-nav-item').style.display = 'block';
       }
 
+      if (verif.status === 'banned') {
+        document.body.innerHTML = `
+          <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#000; color:#ff4444; text-align:center; padding:20px;">
+            <div style="font-size:4rem; margin-bottom:20px;">🚫</div>
+            <h1 style="font-size:2rem; margin-bottom:10px;">ACCESS DENIED</h1>
+            <p style="color:#aaa; font-size:1.1rem; max-width:400px; line-height:1.5;">Your account has been permanently suspended for violating community guidelines.</p>
+          </div>
+        `;
+        return;
+      }
+
       if (verif.status === 'unverified') {
         this._showOnboarding();
       } else {
