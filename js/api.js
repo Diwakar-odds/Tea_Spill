@@ -119,7 +119,10 @@ const API = {
       .eq('auth_id', userId)
       .single();
 
-    if (error || !data) return { status: 'unverified', isAdmin: false };
+    if (error || !data) {
+      console.error('[API Auth] checkVerificationStatus Error:', error);
+      return { status: 'unverified', isAdmin: false };
+    }
     return { status: data.verification_status, isAdmin: data.is_admin };
   },
 
