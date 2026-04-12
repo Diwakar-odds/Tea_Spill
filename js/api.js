@@ -60,7 +60,7 @@ const API = {
 
       google.accounts.id.renderButton(
         document.getElementById('google-btn-container'),
-        { theme: 'filled_black', size: 'large', shape: 'rectangular', text: 'signin_with' }
+        { theme: 'filled_black', size: 'large', shape: 'rectangular', text: 'continue_with' }
       );
     } else {
       console.error("[API] Google Identity script not loaded or login screen missing.");
