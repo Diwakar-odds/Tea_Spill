@@ -96,7 +96,16 @@ const Storage = {
     };
   },
 
-  saveUser(user) { this.set('user', user); },
+  saveUser(user, skipCloudSync = false) { 
+    this.set('user', user); 
+    
+    // Cross-Platform Sync: Push profile state into Google Auth MetaData
+    if (!skipCloudSync && window.API && API.client) {
+      API.client.auth.updateUser({ 
+        data: { tea_profile: user } 
+      }).catch(err => console.warn('[Cloud Sync] Meta backup failed:', err));
+    }
+  },
 
   /* ─── Spills ─── */
 

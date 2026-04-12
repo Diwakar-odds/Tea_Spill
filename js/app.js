@@ -38,6 +38,14 @@ const App = {
       }
       this.session = session;
 
+      // Cross-Platform Sync: Clone Cloud Profile to Local Device Memory
+      if (session.user.user_metadata && session.user.user_metadata.tea_profile) {
+        Storage.saveUser(session.user.user_metadata.tea_profile, true);
+      }
+
+      // Pre-fetch live community content before unveiling the app
+      await Storage.syncSpillsFromCloud();
+
       const verif = await API.checkVerificationStatus(session.user.id);
       if (verif.status === 'unverified') {
         this._showOnboarding();
