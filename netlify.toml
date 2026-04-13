@@ -2,6 +2,11 @@
   publish = "."
   command = "bash scripts/netlify-build.sh"
 
+  [build.environment]
+    # Frontend runtime values are intentionally emitted to runtime-config.js.
+    SECRETS_SCAN_OMIT_PATHS = "runtime-config.js"
+    SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL,SUPABASE_ANON_KEY,GOOGLE_CLIENT_ID"
+
 [[headers]]
   for = "/runtime-config.js"
 
