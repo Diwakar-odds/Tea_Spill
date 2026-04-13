@@ -1,0 +1,34 @@
+{
+  "name": "tea_spill",
+  "version": "1.0.0",
+  "description": "",
+  "main": "runtime-config.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "config:runtime": "node scripts/generate-runtime-config.mjs",
+    "mobile:prepare": "npm run config:runtime && node scripts/prepare-mobile-web.mjs",
+    "mobile:copy": "npm run mobile:prepare && npx cap copy android",
+    "mobile:sync": "npm run mobile:prepare && npx cap sync android",
+    "mobile:doctor": "node scripts/android-sdk-doctor.mjs",
+    "mobile:open": "npm run mobile:sync && npx cap open android",
+    "mobile:apk:debug": "npm run mobile:sync && npm run mobile:doctor && node scripts/run-gradle.mjs assembleDebug",
+    "mobile:apk:release": "npm run mobile:sync && npm run mobile:doctor && node scripts/run-gradle.mjs assembleRelease"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Diwakar-odds/Tea_Spill.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/Diwakar-odds/Tea_Spill/issues"
+  },
+  "homepage": "https://github.com/Diwakar-odds/Tea_Spill#readme",
+  "devDependencies": {
+    "@capacitor/android": "^8.3.0",
+    "@capacitor/cli": "^8.3.0",
+    "@capacitor/core": "^8.3.0"
+  }
+}

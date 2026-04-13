@@ -13,6 +13,16 @@ desktop.ini
 node_modules/
 package-lock.json
 
+# Capacitor / Android artifacts
+dist-mobile/
+android/.gradle/
+android/local.properties
+android/build/
+android/app/build/
+android/captures/
+*.keystore
+*.jks
+
 # Environment
 .env
 .env.local
