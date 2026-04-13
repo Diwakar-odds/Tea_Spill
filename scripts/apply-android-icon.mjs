@@ -1,7 +1,33 @@
 import fs from 'node:fs';
 import path from 'node:path';
 
-const rootDir = process.cwd();
+function findProjectRoot(startDir) {
+  let current = startDir;
+
+  while (true) {
+    const hasPackageJson = fs.existsSync(path.join(current, 'package.json'));
+    const hasAndroidResDir = fs.existsSync(
+      path.join(current, 'android', 'app', 'src', 'main', 'res')
+    );
+
+    if (hasPackageJson && hasAndroidResDir) {
+      return current;
+    }
+
+    const parent = path.dirname(current);
+    if (parent === current) {
+      return null;
+    }
+    current = parent;
+  }
+}
+
+const rootDir = findProjectRoot(process.cwd());
+if (!rootDir) {
+  console.error('[mobile-icon] Could not find project root. Run the command inside the repository.');
+  process.exit(1);
+}
+
 const sourcePath = process.env.ICON_PATH
   ? path.resolve(process.env.ICON_PATH)
   : path.join(rootDir, 'branding', 'spill-wise-logo.png');
