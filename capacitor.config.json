@@ -1,5 +1,15 @@
 {
   "appId": "com.teaspill.app",
   "appName": "Tea Spill",
-  "webDir": "dist-mobile"
+  "webDir": "dist-mobile",
+  "server": {
+    "url": "https://spill-wise.netlify.app/app.html",
+    "cleartext": false,
+    "allowNavigation": [
+      "spill-wise.netlify.app",
+      "*.supabase.co",
+      "accounts.google.com",
+      "www.googleapis.com"
+    ]
+  }
 }
