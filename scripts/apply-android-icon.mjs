@@ -28,17 +28,63 @@ if (!rootDir) {
   process.exit(1);
 }
 
-const sourcePath = process.env.ICON_PATH
-  ? path.resolve(process.env.ICON_PATH)
-  : path.join(rootDir, 'branding', 'spill-wise-logo.png');
+const brandingDir = path.join(rootDir, 'branding');
+
+function resolveSourceIcon() {
+  if (process.env.ICON_PATH) {
+    return path.resolve(process.env.ICON_PATH);
+  }
+
+  if (!fs.existsSync(brandingDir)) {
+    return null;
+  }
+
+  const preferredNames = [
+    'spill-wise-logo.png',
+    'spill-wise-logo.jpg',
+    'spill-wise-logo.jpeg',
+    'spill-wise-logo.webp',
+    'logo.png',
+    'logo.jpg',
+    'logo.jpeg',
+    'logo.webp'
+  ];
+
+  const files = fs.readdirSync(brandingDir);
+  const lowerMap = new Map(files.map((file) => [file.toLowerCase(), file]));
+
+  for (const preferred of preferredNames) {
+    const actual = lowerMap.get(preferred.toLowerCase());
+    if (actual) {
+      return path.join(brandingDir, actual);
+    }
+  }
+
+  const firstImage = files.find((file) => /\.(png|jpg|jpeg|webp)$/i.test(file));
+  if (firstImage) {
+    return path.join(brandingDir, firstImage);
+  }
+
+  return null;
+}
+
+const sourcePath = resolveSourceIcon();
 
 const targetBaseDir = path.join(rootDir, 'android', 'app', 'src', 'main', 'res');
 const densities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'];
 const iconFiles = ['ic_launcher.png', 'ic_launcher_foreground.png', 'ic_launcher_round.png'];
 
-if (!fs.existsSync(sourcePath)) {
-  console.error(`[mobile-icon] Source icon not found: ${sourcePath}`);
-  console.error('[mobile-icon] Save your logo image at branding/spill-wise-logo.png or set ICON_PATH.');
+if (!sourcePath || !fs.existsSync(sourcePath)) {
+  console.error(
+    `[mobile-icon] Source icon not found. Expected branding path: ${path.join(brandingDir, 'spill-wise-logo.png')}`
+  );
+  if (fs.existsSync(brandingDir)) {
+    const files = fs.readdirSync(brandingDir);
+    console.error(`[mobile-icon] Files in branding/: ${files.length ? files.join(', ') : '(empty)'}`);
+  } else {
+    console.error('[mobile-icon] branding/ folder does not exist.');
+  }
+  console.error('[mobile-icon] Save your logo in branding/ or set ICON_PATH to the image location.');
   process.exit(1);
 }
 

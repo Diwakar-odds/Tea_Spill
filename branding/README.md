@@ -14,4 +14,12 @@ If your image is in another location, run with `ICON_PATH`, for example:
 
 - `ICON_PATH="C:\\Users\\rajat\\Downloads\\my-logo.png" npm run mobile:icon`
 
+Windows PowerShell example:
+
+- `$env:ICON_PATH="C:\\Users\\rajat\\Downloads\\my-logo.png"; npm run mobile:icon`
+
+Windows CMD example:
+
+- `set ICON_PATH=C:\\Users\\rajat\\Downloads\\my-logo.png && npm run mobile:icon`
+
 After that, rebuild your APK in Android Studio.
