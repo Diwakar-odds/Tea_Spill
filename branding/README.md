@@ -4,6 +4,8 @@ Place your final launcher image in this folder with this exact filename:
 
 - `spill-wise-logo.png`
 
+Use a real PNG export. Do not rename `.jpg` or `.webp` to `.png`.
+
 Then run:
 
 - `npm run mobile:icon`

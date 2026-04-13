@@ -46,7 +46,13 @@ APK output:
 npm run mobile:apk:release
 ```
 
-This creates an unsigned release APK. To distribute publicly, sign it using Android Studio:
+This now creates ABI-split APKs (smaller files per CPU architecture) instead of one large universal APK.
+Typical outputs:
+
+- `android/app/build/outputs/apk/release/app-arm64-v8a-release-unsigned.apk`
+- `android/app/build/outputs/apk/release/app-armeabi-v7a-release-unsigned.apk`
+
+To distribute publicly, sign using Android Studio:
 
 1. `npm run mobile:open`
 2. In Android Studio: Build -> Generate Signed Bundle / APK
@@ -56,9 +62,13 @@ Typical signed output location:
 
 - `android/app/release/`
 
+Recommended for most modern phones:
+
+- Use the signed `arm64-v8a` APK (usually much smaller than universal).
+
 ## 5) Publish APK on your website
 
-1. Copy your APK to `downloads/TeaSpill-latest.apk`
+1. Copy your signed `arm64-v8a` APK to `downloads/TeaSpill-latest.apk`
 2. Deploy your site
 3. Users can download directly from:
 
