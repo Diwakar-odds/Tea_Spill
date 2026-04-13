@@ -77,8 +77,8 @@ const Storage = {
 
   getUser() {
     return this.get('user') || {
-      alias: this._generateAlias(),
-      aliasEmoji: ALIAS_EMOJIS[Math.floor(Math.random() * ALIAS_EMOJIS.length)],
+      alias: 'Tea User',
+      aliasEmoji: '👤',
       teaPoints: 0,
       spills: 0,
       reactions: 0,
@@ -143,26 +143,40 @@ const Storage = {
 
     // In live mode, write to cloud first to prevent phantom local posts.
     if (window.API && API.isLive && API.client) {
-      const collegeObj = this.getColleges().find(c => c.id === spill.collegeId);
-      const cName = collegeObj ? collegeObj.name : 'Unknown College';
-
       const authId = await API.getCurrentUserId();
       if (!authId) {
         return { ok: false, error: 'You must be signed in to post.' };
       }
 
+      const profile = typeof API.getMyProfile === 'function'
+        ? await API.getMyProfile(authId)
+        : null;
+      if (!profile) {
+        return { ok: false, error: 'Could not load your profile details.' };
+      }
+
+      const profileCollegeName = String(profile.college_name || '').trim();
+      if (!profileCollegeName) {
+        return { ok: false, error: 'Please complete your college profile details first.' };
+      }
+
+      const mediaUrls = Array.isArray(spill.mediaUrls) ? spill.mediaUrls : [];
+      const profileCollegeId = this._buildCollegeIdFromName(profileCollegeName);
+      const displayAlias = String(profile.username || spill.alias || 'Tea User').trim() || 'Tea User';
+
       const payload = {
         spill_id: spill.id,
         user_id: authId,
-        college_id: spill.collegeId,
-        college_name: cName,
-        department: spill.department || null,
-        section: spill.section || null,
+        college_id: profileCollegeId,
+        college_name: profileCollegeName,
+        department: profile.department || null,
+        section: profile.section || null,
         category: spill.category,
         title: spill.title,
         body: spill.body,
-        alias: spill.alias,
-        alias_emoji: spill.aliasEmoji,
+        alias: displayAlias,
+        alias_emoji: '👤',
+        media_urls: mediaUrls,
         self_destruct: spill.selfDestruct || false,
         reactions: { sip: 0, fire: 0, shook: 0, dead: 0, cap: 0 }
       };
@@ -170,6 +184,12 @@ const Storage = {
       const { error } = await API.client.from('spills').insert([payload]);
       if (error) {
         console.warn('[Storage] Failed to push spill to Supabase:', error);
+        if (/media_urls/i.test(error.message || '') && /column/i.test(error.message || '')) {
+          return {
+            ok: false,
+            error: 'Database missing spill image column. Run the spill media SQL migration.'
+          };
+        }
         return {
           ok: false,
           error: error.message || 'Cloud write failed',
@@ -183,6 +203,9 @@ const Storage = {
     }
 
     const spills = this.getSpills();
+    spill.alias = spill.alias || 'Tea User';
+    spill.aliasEmoji = '👤';
+    spill.mediaUrls = Array.isArray(spill.mediaUrls) ? spill.mediaUrls : [];
     spills.unshift(spill);
     this.saveSpills(spills);
     return { ok: true };
@@ -230,8 +253,9 @@ const Storage = {
         category: r.category,
         title: r.title,
         body: r.body,
-        alias: r.alias,
-        aliasEmoji: r.alias_emoji,
+        alias: r.alias || 'Tea User',
+        aliasEmoji: r.alias_emoji || '👤',
+        mediaUrls: Array.isArray(r.media_urls) ? r.media_urls : [],
         selfDestruct: r.self_destruct,
         reactions: r.reactions || { sip: 0, fire: 0, shook: 0, dead: 0, cap: 0 },
         createdAt: new Date(r.created_at).getTime()
@@ -289,6 +313,15 @@ const Storage = {
   savePages(p)    { this.set('pages', p); },
   saveGroups(g)   { this.set('groups', g); },
   saveChannels(c) { this.set('channels', c); },
+
+  _buildCollegeIdFromName(name) {
+    const normalized = String(name || '')
+      .toLowerCase()
+      .trim()
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '');
+    return normalized ? `profile_${normalized}` : `profile_${Date.now()}`;
+  },
 
   /* ─── Reports / Moderation ─── */
 

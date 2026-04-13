@@ -146,6 +146,49 @@ select option {
   color: var(--text-muted);
   margin-top: var(--space-xs);
 }
+.profile-autotag-note {
+  font-size: var(--font-size-sm);
+  color: var(--text-tertiary);
+  background: var(--bg-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: var(--space-md) var(--space-lg);
+}
+.form-hint {
+  margin-top: var(--space-xs);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+.spill-image-preview {
+  margin-top: var(--space-sm);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--bg-elevated);
+}
+.spill-image-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+}
+.spill-image-preview-item {
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--bg-card);
+}
+.spill-image-preview img {
+  width: 100%;
+  max-height: 180px;
+  object-fit: cover;
+  display: block;
+}
+.spill-image-meta {
+  padding: var(--space-xs) var(--space-sm);
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
 
 /* ─── Category Chips ─── */
 .category-chips {
@@ -166,6 +209,7 @@ select option {
   border: 1px solid var(--border-default);
   background: var(--bg-input);
   color: var(--text-secondary);
+  -webkit-user-select: none;
   user-select: none;
 }
 .chip:hover {
@@ -343,6 +387,31 @@ select option {
   -webkit-box-orient: vertical;
   overflow: hidden;
   margin-bottom: var(--space-lg);
+}
+.spill-media-preview {
+  position: relative;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  margin-bottom: var(--space-lg);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+}
+.spill-media-preview img {
+  width: 100%;
+  max-height: 320px;
+  object-fit: cover;
+  display: block;
+}
+.spill-media-count {
+  position: absolute;
+  top: var(--space-sm);
+  right: var(--space-sm);
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  border-radius: var(--radius-full);
+  padding: 4px 10px;
 }
 
 .spill-card-category {
@@ -677,6 +746,20 @@ select option {
 }
 .reader-body p {
   margin-bottom: var(--space-xl);
+}
+.reader-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: var(--space-md);
+  margin: 0 0 var(--space-2xl);
+}
+.reader-media-item {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
 }
 .reader-reactions {
   display: flex;

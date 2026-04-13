@@ -338,16 +338,17 @@ const Pages = {
     if (!grp) return;
 
     if (!grp.messages) grp.messages = [];
-    const alias = Utils.randomAlias();
+    const user = Storage.getUser();
+    const aliasName = user.alias || 'Tea User';
+    const aliasEmoji = user.aliasEmoji || '👤';
     grp.messages.push({
-      alias: alias.name,
-      emoji: alias.emoji,
+      alias: aliasName,
+      emoji: aliasEmoji,
       body,
       time: 'Just now'
     });
 
     Storage.saveGroups(groups);
-    const user = Storage.getUser();
     user.teaPoints += 1;
     Storage.saveUser(user);
 

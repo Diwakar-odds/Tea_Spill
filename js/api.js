@@ -485,6 +485,40 @@ const API = {
     return filePath;
   },
 
+  async uploadSpillImage(file) {
+    if (!file) return null;
+    if (!this.isLive || !this.client) return null;
+
+    if (!file.type || !file.type.startsWith('image/')) {
+      console.warn('[API Spill] Non-image file rejected.');
+      return null;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      console.warn('[API Spill] File too large.');
+      return null;
+    }
+
+    const authId = await this.getCurrentUserId();
+    if (!authId) return null;
+
+    const rawExt = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const safeExt = rawExt.replace(/[^a-z0-9]/g, '').slice(0, 6) || 'jpg';
+    const filePath = `${authId}/${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${safeExt}`;
+
+    const { error: uploadError } = await this.client.storage
+      .from('spill_media')
+      .upload(filePath, file, { upsert: false, contentType: file.type || 'image/jpeg' });
+
+    if (uploadError) {
+      console.error('[API Spill] Upload failed:', uploadError);
+      return null;
+    }
+
+    const { data } = this.client.storage.from('spill_media').getPublicUrl(filePath);
+    return data && data.publicUrl ? data.publicUrl : null;
+  },
+
   async resolveVerificationUrl(idReference, expiresIn = 300) {
     if (!idReference) return null;
     const ref = String(idReference).trim();

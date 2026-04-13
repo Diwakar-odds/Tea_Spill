@@ -225,8 +225,8 @@ const App = {
     // Initialize user
     const user = Storage.getUser();
     if (!user.alias) {
-      user.alias = Utils.randomAlias().name;
-      user.aliasEmoji = '👻';
+      user.alias = 'Tea User';
+      user.aliasEmoji = '👤';
     }
     Storage.saveUser(user);
 

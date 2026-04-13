@@ -53,7 +53,7 @@
       <div class="onboarding-header">
         <div style="font-size:3rem;margin-bottom:12px">☕</div>
         <h1 style="font-size:1.8rem;font-weight:900;margin-bottom:4px;background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent">Welcome to Tea Spill</h1>
-        <p style="color:var(--text-tertiary);font-size:0.9rem">Set up your anonymous identity. No email. No phone. Just vibes.</p>
+        <p style="color:var(--text-tertiary);font-size:0.9rem">Set up your profile once and start posting faster across all devices.</p>
       </div>
 
       <div class="onboarding-body" id="verification-step-1">
@@ -185,43 +185,8 @@
       </div>
       <form id="spill-form" class="spill-form">
         <div class="form-group">
-          <label for="spill-college">College</label>
-          <select id="spill-college" required>
-            <option value="">Select your college...</option>
-          </select>
-          <button type="button" class="btn-text" id="btn-add-college">+ Add new college</button>
-        </div>
-        <div id="add-college-fields" class="add-college-fields hidden">
-          <input type="text" id="new-college-name" placeholder="College name" />
-          <input type="text" id="new-college-city" placeholder="City" />
-          <select id="new-college-state" title="State" aria-label="State">
-            <option value="">State...</option>
-          </select>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label for="spill-department">Department</label>
-            <select id="spill-department">
-              <option value="">Select...</option>
-              <option value="CSE">CSE</option>
-              <option value="ECE">ECE</option>
-              <option value="ME">Mechanical</option>
-              <option value="CE">Civil</option>
-              <option value="EE">Electrical</option>
-              <option value="IT">IT</option>
-              <option value="BBA">BBA</option>
-              <option value="MBA">MBA</option>
-              <option value="BSc">BSc</option>
-              <option value="BCom">BCom</option>
-              <option value="BA">BA</option>
-              <option value="Law">Law</option>
-              <option value="Medical">Medical</option>
-              <option value="Other">Other</option>
-            </select>
-          </div>
-          <div class="form-group">
-            <label for="spill-section">Section / Year</label>
-            <input type="text" id="spill-section" placeholder="e.g. 2025 A" />
+          <div class="profile-autotag-note">
+            Your college, department, and section are auto-tagged from your profile.
           </div>
         </div>
         <div class="form-group">
@@ -238,11 +203,10 @@
           <textarea id="spill-body" placeholder="Don't hold back... spill everything..." rows="6" required></textarea>
         </div>
         <div class="form-group">
-          <label>Your anonymous alias</label>
-          <div class="alias-picker">
-            <span class="alias-preview" id="alias-preview">👻 Shadow Chai</span>
-            <button type="button" class="btn-text" id="btn-reroll-alias">🎲 Reroll</button>
-          </div>
+          <label for="spill-image">Attach image (optional)</label>
+          <input type="file" id="spill-image" accept="image/*" multiple />
+          <p class="form-hint">Optional. Up to 3 images. JPG/PNG/WebP. Max size 5MB each.</p>
+          <div id="spill-image-preview" class="spill-image-preview hidden"></div>
         </div>
         <div class="form-group">
           <label class="checkbox-label">

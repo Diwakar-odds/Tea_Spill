@@ -88,14 +88,20 @@ const Feed = {
     const temp = Utils.teaTemperature(spill.reactions);
     const user = Storage.getUser();
     const myReactions = user.myReactions?.[spill.id] || [];
+    const displayAlias = spill.alias || 'Tea User';
+    const displayAvatar = spill.aliasEmoji || '👤';
+    const mediaUrls = Array.isArray(spill.mediaUrls)
+      ? spill.mediaUrls.filter(u => typeof u === 'string' && (/^https?:\/\//i.test(u) || /^blob:/i.test(u)))
+      : [];
+    const coverMedia = mediaUrls[0] || null;
 
     return `
       <article class="spill-card" data-spill-id="${spill.id}">
         <div class="spill-card-header">
           <div class="spill-meta">
-            <div class="spill-avatar">${spill.aliasEmoji || '👻'}</div>
+            <div class="spill-avatar">${displayAvatar}</div>
             <div>
-              <div class="spill-author">${Utils.escapeHtml(spill.alias)}</div>
+              <div class="spill-author">${Utils.escapeHtml(displayAlias)}</div>
               <div class="spill-time">${spill.timeAgo || 'Just now'}${spill.selfDestruct ? ' · ⏱️' : ''}</div>
             </div>
           </div>
@@ -110,6 +116,12 @@ const Feed = {
 
         <h3 class="spill-card-title">${Utils.escapeHtml(spill.title)}</h3>
         <p class="spill-card-body">${Utils.escapeHtml(spill.body)}</p>
+        ${coverMedia ? `
+          <div class="spill-media-preview">
+            <img src="${Utils.escapeHtml(coverMedia)}" alt="Spill image" loading="lazy" />
+            ${mediaUrls.length > 1 ? `<span class="spill-media-count">+${mediaUrls.length - 1}</span>` : ''}
+          </div>
+        ` : ''}
 
         <div class="spill-card-footer" style="display:flex; justify-content:space-between; align-items:center;">
           <div style="display:flex; gap:var(--space-sm)">

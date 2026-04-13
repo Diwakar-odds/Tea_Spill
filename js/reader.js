@@ -28,6 +28,11 @@ const Reader = {
     const college = Utils.getCollege(spill.collegeId);
     const category = Utils.getCategory(spill.category);
     const temp = Utils.teaTemperature(spill.reactions);
+    const displayAlias = spill.alias || 'Tea User';
+    const displayAvatar = spill.aliasEmoji || '👤';
+    const mediaUrls = Array.isArray(spill.mediaUrls)
+      ? spill.mediaUrls.filter(u => typeof u === 'string' && (/^https?:\/\//i.test(u) || /^blob:/i.test(u)))
+      : [];
     const user = Storage.getUser();
     const myReactions = user.myReactions?.[spill.id] || [];
     const isSaved = user.savedSpills.includes(spill.id);
@@ -45,9 +50,9 @@ const Reader = {
 
           <div class="reader-meta">
             <div class="reader-author">
-              <div class="reader-author-avatar">${spill.aliasEmoji}</div>
+              <div class="reader-author-avatar">${displayAvatar}</div>
               <div>
-                <div class="reader-author-name">${Utils.escapeHtml(spill.alias)}</div>
+                <div class="reader-author-name">${Utils.escapeHtml(displayAlias)}</div>
                 <div class="reader-author-detail">
                   ${spill.timeAgo} · ${college ? Utils.escapeHtml(college.name) : 'Unknown'}${spill.department ? ' · ' + spill.department : ''}${spill.section ? ' · ' + spill.section : ''}
                 </div>
@@ -60,6 +65,11 @@ const Reader = {
         <div class="reader-divider"></div>
 
         <div class="reader-body">${Utils.textToParagraphs(spill.body)}</div>
+        ${mediaUrls.length ? `
+          <div class="reader-media-grid">
+            ${mediaUrls.map(url => `<img class="reader-media-item" src="${Utils.escapeHtml(url)}" alt="Spill image" loading="lazy" />`).join('')}
+          </div>
+        ` : ''}
 
         <!-- Action Bar -->
         <div class="reader-actions" style="display:flex;gap:var(--space-md);padding:var(--space-lg) 0;border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle);margin:var(--space-xl) 0;flex-wrap:wrap">
@@ -261,7 +271,7 @@ const Reader = {
         <h4 style="font-size:var(--font-size-md);font-weight:700;margin-bottom:var(--space-sm);line-height:1.4">${Utils.escapeHtml(spill.title)}</h4>
         <p style="font-size:var(--font-size-sm);color:var(--text-secondary);line-height:1.5;display:-webkit-box;-webkit-line-clamp:3;-webkit-box-orient:vertical;overflow:hidden">${Utils.escapeHtml(spill.body)}</p>
         <div style="display:flex;align-items:center;gap:var(--space-md);margin-top:var(--space-md);font-size:var(--font-size-xs);color:var(--text-muted)">
-          <span>${spill.aliasEmoji} ${Utils.escapeHtml(spill.alias)}</span>
+          <span>${spill.aliasEmoji || '👤'} ${Utils.escapeHtml(spill.alias || 'Tea User')}</span>
           <span>·</span>
           <span>${college ? college.name : ''}</span>
           <span style="margin-left:auto">${Utils.formatNumber(Utils.totalReactions(spill.reactions))} reactions</span>
@@ -278,7 +288,7 @@ const Reader = {
     if (!spill) return;
 
     const college = Utils.getCollege(spill.collegeId);
-    const text = `☕ Tea Spill\n\n"${spill.title}"\n\n${spill.body.slice(0, 200)}...\n\n— ${spill.alias} | ${college ? college.name : 'Unknown'}\n\n🔥 ${Utils.formatNumber(Utils.totalReactions(spill.reactions))} reactions on Tea Spill`;
+    const text = `☕ Tea Spill\n\n"${spill.title}"\n\n${spill.body.slice(0, 200)}...\n\n— ${spill.alias || 'Tea User'} | ${college ? college.name : 'Unknown'}\n\n🔥 ${Utils.formatNumber(Utils.totalReactions(spill.reactions))} reactions on Tea Spill`;
 
     navigator.clipboard.writeText(text).then(() => {
       Utils.toast('📋 Copied to clipboard!', 'success');

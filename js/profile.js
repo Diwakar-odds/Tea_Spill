@@ -82,7 +82,7 @@ const Profile = {
         <div class="profile-avatar-large">${user.aliasEmoji}</div>
         <h1 class="profile-display-name">${Utils.escapeHtml(user.alias)}</h1>
         <p class="profile-college-info">
-          Anonymous Tea Spiller · Joined ${joinedLabel}
+          Campus Tea Spiller · Joined ${joinedLabel}
         </p>
 
         <div class="profile-stats">
@@ -205,7 +205,6 @@ const Profile = {
       <div style="padding-top:var(--space-2xl);border-top:1px solid var(--border-subtle)">
         <h2 class="section-title" style="font-size:var(--font-size-lg);margin-bottom:var(--space-lg)">⚙️ Settings</h2>
         <div style="display:flex;flex-direction:column;gap:var(--space-md)">
-          <button class="btn btn-ghost" onclick="Profile.rerollIdentity()">🎲 Reroll Anonymous Identity</button>
           <button class="btn btn-ghost" onclick="API.signOut()" style="color:var(--text-secondary); border: 1px solid var(--border-default);">🚪 Sign Out</button>
           <button class="btn btn-ghost" onclick="Profile.clearData()" style="color:var(--rose)">🗑️ Clear All Data</button>
         </div>
@@ -275,14 +274,7 @@ const Profile = {
   },
 
   rerollIdentity() {
-    const user = Storage.getUser();
-    const newAlias = Utils.randomAlias();
-    user.alias = newAlias.name;
-    user.aliasEmoji = newAlias.emoji;
-    Storage.saveUser(user);
-    Utils.toast('🎲 New identity: ' + newAlias.emoji + ' ' + newAlias.name, 'success');
-    this.render();
-    App._updateSidebarProfile();
+    Utils.toast('Identity reroll has been removed for a consistent profile experience.', 'info');
   },
 
   clearData() {

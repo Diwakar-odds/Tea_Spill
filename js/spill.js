@@ -1,8 +1,8 @@
 /* ═══════════════════════════════════════════════════
-   TEA SPILL ☕ — Spill Creation Module
-   College picker, categories, aliases,
-   spill templates, form validation.
-   ═══════════════════════════════════════════════════ */
+  TEA SPILL ☕ — Spill Creation Module
+  Streamlined composer with category, content,
+  optional image upload, and profile auto-tagging.
+  ═══════════════════════════════════════════════════ */
 
 'use strict';
 
@@ -66,110 +66,75 @@ const SPILL_TEMPLATES = [
 ];
 
 const Spill = {
-  currentAlias: null,
   selectedCategory: null,
+  _selectedMediaFiles: [],
+  _previewObjectUrls: [],
+  _isSubmitting: false,
 
   init() {
-    this.currentAlias = Utils.randomAlias();
-    this._populateColleges();
-    this._populateStates();
     this._populateCategories();
-    this._updateAliasPreview();
     this._bindEvents();
-  },
-
-  _populateColleges() {
-    const select = document.getElementById('spill-college');
-    const colleges = Storage.getColleges();
-    select.innerHTML = '<option value="">Select your college...</option>';
-
-    // Group by state for better UX
-    const grouped = {};
-    colleges.forEach(c => {
-      if (!grouped[c.state]) grouped[c.state] = [];
-      grouped[c.state].push(c);
-    });
-
-    Object.keys(grouped).sort().forEach(state => {
-      const optgroup = document.createElement('optgroup');
-      optgroup.label = state;
-      grouped[state].sort((a, b) => a.name.localeCompare(b.name)).forEach(c => {
-        const opt = document.createElement('option');
-        opt.value = c.id;
-        opt.textContent = `${c.icon} ${c.name} — ${c.city}`;
-        optgroup.appendChild(opt);
-      });
-      select.appendChild(optgroup);
-    });
-  },
-
-  _populateStates() {
-    const select = document.getElementById('new-college-state');
-    select.innerHTML = '<option value="">State...</option>';
-    INDIAN_STATES.forEach(state => {
-      const opt = document.createElement('option');
-      opt.value = state;
-      opt.textContent = state;
-      select.appendChild(opt);
-    });
   },
 
   _populateCategories() {
     const container = document.getElementById('category-chips');
+    if (!container) return;
     container.innerHTML = CATEGORIES.map(c => `
       <div class="chip" data-category="${c.id}">${c.emoji} ${c.name}</div>
     `).join('');
   },
 
-  _updateAliasPreview() {
-    document.getElementById('alias-preview').textContent =
-      `${this.currentAlias.emoji} ${this.currentAlias.name}`;
-  },
-
   _bindEvents() {
-    // Toggle add college fields
-    document.getElementById('btn-add-college').addEventListener('click', () => {
-      document.getElementById('add-college-fields').classList.toggle('hidden');
-    });
-
-    // Reroll alias
-    document.getElementById('btn-reroll-alias').addEventListener('click', () => {
-      this.currentAlias = Utils.randomAlias();
-      this._updateAliasPreview();
-    });
-
     // Category chips
-    document.getElementById('category-chips').addEventListener('click', (e) => {
-      const chip = e.target.closest('.chip');
-      if (!chip) return;
-      document.querySelectorAll('#category-chips .chip').forEach(c => c.classList.remove('selected'));
-      chip.classList.add('selected');
-      this.selectedCategory = chip.dataset.category;
-    });
+    const chips = document.getElementById('category-chips');
+    if (chips) {
+      chips.addEventListener('click', (e) => {
+        const chip = e.target.closest('.chip');
+        if (!chip) return;
+        document.querySelectorAll('#category-chips .chip').forEach(c => c.classList.remove('selected'));
+        chip.classList.add('selected');
+        this.selectedCategory = chip.dataset.category;
+      });
+    }
 
     // Title char count
-    document.getElementById('spill-title').addEventListener('input', (e) => {
-      document.getElementById('title-chars').textContent = e.target.value.length;
-    });
+    const titleInput = document.getElementById('spill-title');
+    if (titleInput) {
+      titleInput.addEventListener('input', (e) => {
+        const count = document.getElementById('title-chars');
+        if (count) count.textContent = e.target.value.length;
+      });
+    }
+
+    const imageInput = document.getElementById('spill-image');
+    if (imageInput) {
+      imageInput.addEventListener('change', () => this._handleImageSelection(imageInput.files));
+    }
 
     // Form submit
-    document.getElementById('spill-form').addEventListener('submit', (e) => {
-      e.preventDefault();
-      this._submit();
-    });
+    const form = document.getElementById('spill-form');
+    if (form) {
+      form.addEventListener('submit', (e) => {
+        e.preventDefault();
+        this._submit();
+      });
+    }
 
     // Cancel
-    document.getElementById('spill-cancel').addEventListener('click', () => this.close());
+    const cancelBtn = document.getElementById('spill-cancel');
+    if (cancelBtn) cancelBtn.addEventListener('click', () => this.close());
 
     // Close modal
-    document.getElementById('spill-modal-close').addEventListener('click', () => this.close());
+    const closeBtn = document.getElementById('spill-modal-close');
+    if (closeBtn) closeBtn.addEventListener('click', () => this.close());
 
     // Close on overlay click
-    document.getElementById('spill-modal').addEventListener('click', (e) => {
-      if (e.target === document.getElementById('spill-modal')) {
-        this.close();
-      }
-    });
+    const modal = document.getElementById('spill-modal');
+    if (modal) {
+      modal.addEventListener('click', (e) => {
+        if (e.target === modal) this.close();
+      });
+    }
   },
 
   open(templateId) {
@@ -177,14 +142,12 @@ const Spill = {
       return;
     }
 
-    this.currentAlias = Utils.randomAlias();
-    this._updateAliasPreview();
-    this._populateColleges();
     this.selectedCategory = null;
+    this._selectedMediaFiles = [];
     document.querySelectorAll('#category-chips .chip').forEach(c => c.classList.remove('selected'));
     document.getElementById('spill-form').reset();
     document.getElementById('title-chars').textContent = '0';
-    document.getElementById('add-college-fields').classList.add('hidden');
+    this._clearImagePreview();
 
     // Apply template if provided
     if (templateId) {
@@ -207,9 +170,92 @@ const Spill = {
     document.body.style.overflow = 'hidden';
   },
 
+  _handleImageSelection(fileList) {
+    const files = fileList ? Array.from(fileList).slice(0, 3) : [];
+    if (!files.length) {
+      this._selectedMediaFiles = [];
+      this._clearImagePreview();
+      return;
+    }
+
+    for (const file of files) {
+      if (!file.type || !file.type.startsWith('image/')) {
+        Utils.toast('Please choose image files only.', 'error');
+        this._selectedMediaFiles = [];
+        const input = document.getElementById('spill-image');
+        if (input) input.value = '';
+        this._clearImagePreview();
+        return;
+      }
+
+      if (file.size > 5 * 1024 * 1024) {
+        Utils.toast(`Image too large (${file.name}). Max size is 5MB each.`, 'error');
+        this._selectedMediaFiles = [];
+        const input = document.getElementById('spill-image');
+        if (input) input.value = '';
+        this._clearImagePreview();
+        return;
+      }
+    }
+
+    this._selectedMediaFiles = files;
+    this._renderImagePreview(files);
+  },
+
+  _renderImagePreview(files) {
+    const box = document.getElementById('spill-image-preview');
+    if (!box) return;
+
+    if (this._previewObjectUrls.length) {
+      this._previewObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+      this._previewObjectUrls = [];
+    }
+
+    const previews = files.map((file) => {
+      const url = URL.createObjectURL(file);
+      return {
+        url,
+        name: file.name,
+        sizeKb: Math.round(file.size / 1024)
+      };
+    });
+
+    this._previewObjectUrls = previews.map((p) => p.url);
+
+    box.innerHTML = `
+      <div class="spill-image-preview-grid">
+        ${previews
+          .map(
+            (p) => `
+              <div class="spill-image-preview-item">
+                <img src="${p.url}" alt="Spill image preview" />
+                <div class="spill-image-meta">${Utils.escapeHtml(p.name)} · ${p.sizeKb}KB</div>
+              </div>
+            `
+          )
+          .join('')}
+      </div>
+    `;
+    box.classList.remove('hidden');
+  },
+
+  _clearImagePreview() {
+    const box = document.getElementById('spill-image-preview');
+    if (!box) return;
+    if (this._previewObjectUrls.length) {
+      this._previewObjectUrls.forEach((url) => URL.revokeObjectURL(url));
+      this._previewObjectUrls = [];
+    }
+    box.classList.add('hidden');
+    box.innerHTML = '';
+  },
+
   _injectTemplatesBar() {
     const existing = document.getElementById('templates-bar');
     if (existing) existing.remove();
+
+    const form = document.getElementById('spill-form');
+    if (!form) return;
 
     const bar = document.createElement('div');
     bar.id = 'templates-bar';
@@ -223,7 +269,6 @@ const Spill = {
       </div>
     `;
 
-    const form = document.getElementById('spill-form');
     form.insertBefore(bar, form.firstChild);
   },
 
@@ -248,16 +293,18 @@ const Spill = {
   },
 
   async _submit() {
+    if (this._isSubmitting) return;
+
     if (typeof window.App !== 'undefined' && App.requireVerified && !App.requireVerified('post a spill')) {
       return;
     }
 
     const title = document.getElementById('spill-title').value.trim();
     const body = document.getElementById('spill-body').value.trim();
-    let collegeId = document.getElementById('spill-college').value;
-    const department = document.getElementById('spill-department').value;
-    const section = document.getElementById('spill-section').value.trim();
     const selfDestruct = document.getElementById('spill-timer').checked;
+    const imageFiles = this._selectedMediaFiles;
+    const submitBtn = document.querySelector('#spill-form button[type="submit"]');
+    const originalBtnText = submitBtn ? submitBtn.textContent : '';
 
     // Validation
     if (!title) {
@@ -283,76 +330,88 @@ const Spill = {
       return;
     }
 
-    // Handle new college
-    if (!collegeId) {
-      const newName = document.getElementById('new-college-name').value.trim();
-      const newCity = document.getElementById('new-college-city').value.trim();
-      const newState = document.getElementById('new-college-state').value;
+    this._isSubmitting = true;
+    if (submitBtn) {
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Posting...';
+    }
 
-      if (newName && newCity && newState) {
-        const newCollege = {
-          id: 'custom_' + Utils.uid(),
-          name: newName,
-          city: newCity,
-          state: newState,
-          icon: '🏫',
-          verified: false
-        };
-        Storage.addCollege(newCollege);
-        collegeId = newCollege.id;
-      } else {
-        Utils.toast('🏫 Select a college or fill in the new college form', 'error');
+    try {
+      let mediaUrls = [];
+      if (imageFiles && imageFiles.length) {
+        if (window.API && API.isLive) {
+          for (const imageFile of imageFiles) {
+            const uploadedUrl = await API.uploadSpillImage(imageFile);
+            if (!uploadedUrl) {
+              Utils.toast('Image upload failed. Please try again.', 'error');
+              return;
+            }
+            mediaUrls.push(uploadedUrl);
+          }
+        } else {
+          // Local mode preview support.
+          mediaUrls = imageFiles.map(file => URL.createObjectURL(file));
+        }
+      }
+
+      const user = Storage.getUser();
+      const spill = {
+        id: Utils.uid(),
+        userId: (window.App && App.session && App.session.user) ? App.session.user.id : null,
+        title,
+        body,
+        collegeId: user.collegeId || null,
+        collegeName: user.collegeName || null,
+        department: user.department || null,
+        section: user.section || null,
+        category: this.selectedCategory,
+        alias: user.alias || 'Tea User',
+        aliasEmoji: '👤',
+        mediaUrls,
+        reactions: { sip: 0, fire: 0, shook: 0, dead: 0, cap: 0 },
+        comments: [],
+        timeAgo: 'Just now',
+        selfDestruct,
+        createdAt: Date.now()
+      };
+
+      const addResult = await Storage.addSpill(spill);
+      if (!addResult || !addResult.ok) {
+        const msg = String(addResult && addResult.error ? addResult.error : 'Could not post right now.');
+        if (/row-level security|permission|violates/i.test(msg)) {
+          Utils.toast('Post blocked by server policy. Verify your account status first.', 'error');
+        } else if (/college profile details/i.test(msg)) {
+          Utils.toast('Complete your profile details before posting.', 'error');
+        } else {
+          Utils.toast('Could not publish this spill: ' + msg, 'error');
+        }
         return;
       }
-    }
 
-    const user = Storage.getUser();
-    const spill = {
-      id: Utils.uid(),
-      userId: (window.App && App.session && App.session.user) ? App.session.user.id : null,
-      title,
-      body,
-      collegeId,
-      department,
-      section,
-      category: this.selectedCategory,
-      alias: user.alias,
-      aliasEmoji: user.aliasEmoji,
-      reactions: { sip: 0, fire: 0, shook: 0, dead: 0, cap: 0 },
-      comments: [],
-      timeAgo: 'Just now',
-      selfDestruct,
-      createdAt: Date.now()
-    };
-
-    const addResult = await Storage.addSpill(spill);
-    if (!addResult || !addResult.ok) {
-      const msg = String(addResult && addResult.error ? addResult.error : 'Could not post right now.');
-      if (/row-level security|permission|violates/i.test(msg)) {
-        Utils.toast('Post blocked by server policy. Verify your account status first.', 'error');
-      } else {
-        Utils.toast('Could not publish this spill: ' + msg, 'error');
+      // Update user stats
+      user.mySpillIds = user.mySpillIds || [];
+      user.mySpillIds.push(spill.id);
+      user.spills += 1;
+      user.teaPoints += 10;
+      if (user.spills === 1 && !user.badges.includes('first_spill')) {
+        user.badges.push('first_spill');
       }
-      return;
-    }
+      Storage.saveUser(user);
 
-    // Update user stats
-    user.mySpillIds = user.mySpillIds || [];
-    user.mySpillIds.push(spill.id);
-    user.spills += 1;
-    user.teaPoints += 10;
-    if (user.spills === 1 && !user.badges.includes('first_spill')) {
-      user.badges.push('first_spill');
-    }
-    Storage.saveUser(user);
+      this.close();
+      Utils.toast('☕ Tea has been spilled!', 'success');
+      App._updateSidebarProfile();
 
-    this.close();
-    Utils.toast('☕ Tea has been spilled!', 'success');
-    App._updateSidebarProfile();
-
-    // Refresh feed
-    if (document.getElementById('page-feed').classList.contains('active')) {
-      Feed.render();
+      // Refresh feed
+      if (document.getElementById('page-feed').classList.contains('active')) {
+        Feed.render();
+      }
+    } finally {
+      this._isSubmitting = false;
+      if (submitBtn) {
+        submitBtn.disabled = false;
+        submitBtn.textContent = originalBtnText;
+      }
     }
   }
 };
