@@ -154,31 +154,41 @@ const Feed = {
    * @param {string} spillId
    * @param {string} reactionId
    */
-  react(spillId, reactionId) {
+  async react(spillId, reactionId) {
+    if (typeof window.App !== 'undefined' && App.requireVerified && !App.requireVerified('react to spills')) {
+      return;
+    }
+
     const user = Storage.getUser();
     if (!user.myReactions) user.myReactions = {};
     if (!user.myReactions[spillId]) user.myReactions[spillId] = [];
+
+    if (user.myReactions[spillId].includes(reactionId)) {
+      Utils.toast('Reaction already added.', 'info');
+      return;
+    }
 
     const spills = Storage.getSpills();
     const spill = spills.find(s => s.id === spillId);
     if (!spill) return;
     if (!spill.reactions) spill.reactions = {};
 
-    const idx = user.myReactions[spillId].indexOf(reactionId);
-    if (idx > -1) {
-      user.myReactions[spillId].splice(idx, 1);
-      spill.reactions[reactionId] = Math.max(0, (spill.reactions[reactionId] || 1) - 1);
-    } else {
-      user.myReactions[spillId].push(reactionId);
-      spill.reactions[reactionId] = (spill.reactions[reactionId] || 0) + 1;
-      user.teaPoints += 1;
-      user.reactions += 1;
-      
-      // Cloud Engine Sync
-      if (window.API && API.isLive) {
-        API.reactToSpill(spillId, reactionId);
+    let cloudReactions = null;
+    if (window.API && API.isLive) {
+      const reactionResult = await API.reactToSpill(spillId, reactionId);
+      if (!reactionResult.ok) {
+        Utils.toast('Failed to record reaction. Please try again.', 'error');
+        return;
       }
+      cloudReactions = reactionResult.reactions;
     }
+
+    user.myReactions[spillId].push(reactionId);
+    if (cloudReactions) spill.reactions = cloudReactions;
+    else spill.reactions[reactionId] = (spill.reactions[reactionId] || 0) + 1;
+
+    user.teaPoints += 1;
+    user.reactions += 1;
 
     Storage.saveUser(user);
     Storage.saveSpills(spills);

@@ -8,6 +8,29 @@
 const Admin = {
   _tab: 'pending',
 
+  _safe(value, fallback = '—') {
+    if (value === null || value === undefined || value === '') return fallback;
+    return Utils.escapeHtml(String(value));
+  },
+
+  async _attachSignedIdUrls(users) {
+    if (!Array.isArray(users) || users.length === 0) return [];
+
+    const signed = await Promise.all(
+      users.map(async (user) => {
+        let idUrl = null;
+        if (window.API && typeof API.resolveVerificationUrl === 'function') {
+          idUrl = await API.resolveVerificationUrl(user.id_url);
+        } else {
+          idUrl = user.id_url || null;
+        }
+        return { ...user, signed_id_url: idUrl };
+      })
+    );
+
+    return signed;
+  },
+
   async render() {
     const page = document.getElementById('page-admin');
     page.innerHTML = `
@@ -20,6 +43,7 @@ const Admin = {
       <div style="display:flex; gap:var(--space-sm); padding:0 var(--space-lg) var(--space-md); border-bottom:1px solid var(--border-subtle); margin-bottom:var(--space-lg);">
         <button id="admin-tab-pending" class="btn btn-primary btn-sm" onclick="Admin._switchTab('pending')">⏳ Pending Verification</button>
         <button id="admin-tab-all" class="btn btn-ghost btn-sm" onclick="Admin._switchTab('all')">👥 All Users</button>
+        <button id="admin-tab-reports" class="btn btn-ghost btn-sm" onclick="Admin._switchTab('reports')">🚩 Reports</button>
       </div>
 
       <div id="admin-content" style="padding: 0 var(--space-lg) var(--space-xl);">
@@ -34,10 +58,16 @@ const Admin = {
 
   _switchTab(tab) {
     this._tab = tab;
-    document.getElementById('admin-tab-pending').className = tab === 'pending' ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
-    document.getElementById('admin-tab-all').className = tab === 'all' ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+    document.getElementById('admin-tab-pending').className =
+      tab === 'pending' ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+    document.getElementById('admin-tab-all').className =
+      tab === 'all' ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+    document.getElementById('admin-tab-reports').className =
+      tab === 'reports' ? 'btn btn-primary btn-sm' : 'btn btn-ghost btn-sm';
+
     if (tab === 'pending') this.fetchPending();
-    else this.fetchAll();
+    else if (tab === 'all') this.fetchAll();
+    else this.fetchReports();
   },
 
   async fetchAll() {
@@ -50,8 +80,7 @@ const Admin = {
     }
 
     try {
-      const { data, error } = await API.client.rpc('get_admin_users');
-      if (error) throw error;
+      const data = await API.getAdminUsers('all');
 
       if (!data || data.length === 0) {
         container.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-tertiary);">No users found.</div>';
@@ -80,23 +109,30 @@ const Admin = {
           <tbody>
             ${data.map(user => {
               const s = statusColors[user.verification_status] || statusColors.unverified;
+              const safeName = this._safe(user.real_name || user.username || '—');
+              const safeUsername = this._safe(user.username || '');
+              const safeEmail = this._safe(user.email || 'Missing');
+              const safeCollege = this._safe(user.college_name || '—');
+              const safeDepartment = this._safe(user.department || '—');
+              const authId = String(user.auth_id || '').replace(/'/g, "\\'");
+
               return `
               <tr style="border-bottom:1px solid var(--border-subtle);">
                 <td style="padding:10px 12px;">
-                  <div style="font-weight:600; color:var(--text-primary);">${user.real_name || user.username || '—'}</div>
-                  <div style="color:var(--text-tertiary); font-size:11px;">${user.username || ''}</div>
-                  <div style="color:var(--text-secondary); font-size:11px; font-weight:600; margin-top:4px;">📧 ${user.email || 'Missing'}</div>
+                  <div style="font-weight:600; color:var(--text-primary);">${safeName}</div>
+                  <div style="color:var(--text-tertiary); font-size:11px;">${safeUsername}</div>
+                  <div style="color:var(--text-secondary); font-size:11px; font-weight:600; margin-top:4px;">📧 ${safeEmail}</div>
                 </td>
-                <td style="padding:10px 12px; color:var(--text-secondary);">${user.college_name || '—'}</td>
-                <td style="padding:10px 12px; color:var(--text-tertiary);">${user.department || '—'}</td>
+                <td style="padding:10px 12px; color:var(--text-secondary);">${safeCollege}</td>
+                <td style="padding:10px 12px; color:var(--text-tertiary);">${safeDepartment}</td>
                 <td style="padding:10px 12px;">
                   <span style="background:${s.bg}; color:${s.color}; padding:3px 10px; border-radius:99px; font-size:11px; font-weight:600;">${s.label}</span>
                 </td>
                 <td style="padding:10px 12px; text-align:right;">
                   <div style="display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;">
-                    ${user.verification_status !== 'verified' ? `<button class="btn btn-ghost" style="font-size:11px; padding:3px 10px; color:#22c55e; border-color:#22c55e;" onclick="Admin.approve('${user.auth_id}')">✅ Approve</button>` : ''}
-                    ${user.verification_status !== 'rejected' ? `<button class="btn btn-ghost" style="font-size:11px; padding:3px 10px; color:var(--amber); border-color:var(--amber);" onclick="Admin.reject('${user.auth_id}')">⛔ Reject</button>` : ''}
-                    ${user.verification_status !== 'banned' ? `<button class="btn btn-ghost" style="font-size:11px; padding:3px 10px; color:var(--rose); border-color:var(--rose);" onclick="Admin.banUser('${user.auth_id}')">🚫 Ban</button>` : ''}
+                    ${user.verification_status !== 'verified' ? `<button class="btn btn-ghost" style="font-size:11px; padding:3px 10px; color:#22c55e; border-color:#22c55e;" onclick="Admin.approve('${authId}')">✅ Approve</button>` : ''}
+                    ${user.verification_status !== 'rejected' ? `<button class="btn btn-ghost" style="font-size:11px; padding:3px 10px; color:var(--amber); border-color:var(--amber);" onclick="Admin.reject('${authId}')">⛔ Reject</button>` : ''}
+                    ${user.verification_status !== 'banned' ? `<button class="btn btn-ghost" style="font-size:11px; padding:3px 10px; color:var(--rose); border-color:var(--rose);" onclick="Admin.banUser('${authId}')">🚫 Ban</button>` : ''}
                   </div>
                 </td>
               </tr>`;
@@ -119,11 +155,10 @@ const Admin = {
     }
 
     try {
-      const { data, error } = await API.client.rpc('get_admin_users', { p_status: 'pending' });
-      
-      if (error) throw error;
+      const data = await API.getAdminUsers('pending');
+      const users = await this._attachSignedIdUrls(data);
 
-      if (!data || data.length === 0) {
+      if (!users || users.length === 0) {
         container.innerHTML = `
           <div style="text-align:center; padding: 80px 20px;">
             <div style="font-size:3rem; opacity:0.5; margin-bottom:10px;">✨</div>
@@ -136,57 +171,78 @@ const Admin = {
 
       container.innerHTML = `
         <div class="admin-grid" style="display:grid; grid-template-columns: repeat(auto-fill, minmax(340px, 1fr)); gap: var(--space-lg);">
-          ${data.map(user => {
-            const dob = new Date(user.dob);
-            const diffMs = Date.now() - dob.getTime();
-            const age = Math.abs(new Date(diffMs).getUTCFullYear() - 1970);
+          ${users.map(user => {
+            const dob = user.dob ? new Date(user.dob) : null;
+            const validDob = dob && !Number.isNaN(dob.getTime());
+            const diffMs = validDob ? Date.now() - dob.getTime() : 0;
+            const age = validDob ? Math.abs(new Date(diffMs).getUTCFullYear() - 1970) : null;
+
+            const safeName = this._safe(user.real_name || '—');
+            const safeUsername = this._safe(user.username || '—');
+            const safeEmail = this._safe(user.email || '—');
+            const safeCollege = this._safe(user.college_name || '—');
+            const safeDepartment = this._safe(user.department || '—');
+            const safeSection = this._safe(user.section || '—');
+            const safeDob = this._safe(user.dob || '—');
+            const authId = String(user.auth_id || '').replace(/'/g, "\\'");
+
+            const hasSignedUrl = !!user.signed_id_url;
+            const safeSignedUrl = hasSignedUrl ? Utils.escapeHtml(String(user.signed_id_url)) : '';
+
             return `
             <div class="admin-card" style="background:var(--bg-card); border:1px solid var(--border-default); border-radius:var(--radius-lg); overflow:hidden;">
               <!-- ID Card Photo -->
-              <a href="${user.id_url}" target="_blank" title="Click to view full ID">
-                <div style="height:180px; background:url('${user.id_url}') center/cover no-repeat; border-bottom:1px solid var(--border-subtle); position:relative;">
+              ${hasSignedUrl ? `
+              <a href="${safeSignedUrl}" target="_blank" rel="noopener noreferrer" title="Click to view full ID">
+                <div style="height:180px; border-bottom:1px solid var(--border-subtle); position:relative; overflow:hidden; background:#111;">
+                  <img src="${safeSignedUrl}" alt="Student ID" style="width:100%; height:100%; object-fit:cover;" />
                   <span style="position:absolute;bottom:8px;right:8px;background:rgba(0,0,0,0.6);color:#fff;font-size:11px;padding:3px 8px;border-radius:99px;">🔍 View Full ID</span>
                 </div>
               </a>
+              ` : `
+              <div style="height:180px; border-bottom:1px solid var(--border-subtle); display:flex; align-items:center; justify-content:center; color:var(--text-tertiary); background:#111;">
+                No ID preview available
+              </div>
+              `}
 
               <!-- User Details -->
               <div style="padding:var(--space-md);">
                 <table style="width:100%; border-collapse:collapse; font-size:var(--font-size-sm); margin-bottom:var(--space-md);">
                   <tr>
                     <td style="color:var(--text-tertiary); padding:4px 8px 4px 0; white-space:nowrap;">👤 Name</td>
-                    <td style="color:var(--text-primary); font-weight:600;">${user.real_name || '—'}</td>
+                    <td style="color:var(--text-primary); font-weight:600;">${safeName}</td>
                   </tr>
                   <tr>
                     <td style="color:var(--text-tertiary); padding:4px 8px 4px 0;">🏷️ Username</td>
-                    <td style="color:var(--text-secondary);">${user.username || '—'}</td>
+                    <td style="color:var(--text-secondary);">${safeUsername}</td>
                   </tr>
                   <tr>
                     <td style="color:var(--text-tertiary); padding:4px 8px 4px 0;">📧 Email</td>
-                    <td style="color:var(--text-secondary); font-weight:600;">${user.email || '—'}</td>
+                    <td style="color:var(--text-secondary); font-weight:600;">${safeEmail}</td>
                   </tr>
                   <tr>
                     <td style="color:var(--text-tertiary); padding:4px 8px 4px 0;">🏫 College</td>
-                    <td style="color:var(--text-primary); font-weight:600;">${user.college_name || '—'}</td>
+                    <td style="color:var(--text-primary); font-weight:600;">${safeCollege}</td>
                   </tr>
                   <tr>
                     <td style="color:var(--text-tertiary); padding:4px 8px 4px 0;">📚 Dept</td>
-                    <td style="color:var(--text-secondary);">${user.department || '—'}</td>
+                    <td style="color:var(--text-secondary);">${safeDepartment}</td>
                   </tr>
                   <tr>
                     <td style="color:var(--text-tertiary); padding:4px 8px 4px 0;">📅 Section</td>
-                    <td style="color:var(--text-secondary);">${user.section || '—'}</td>
+                    <td style="color:var(--text-secondary);">${safeSection}</td>
                   </tr>
                   <tr>
                     <td style="color:var(--text-tertiary); padding:4px 8px 4px 0;">🎂 Age</td>
-                    <td style="color:var(--text-secondary);">${age} yrs (DOB: ${user.dob})</td>
+                    <td style="color:var(--text-secondary);">${age !== null ? age + ' yrs' : '—'} (DOB: ${safeDob})</td>
                   </tr>
                 </table>
 
                 <!-- Action Buttons -->
                 <div style="display:flex; gap:var(--space-sm); flex-wrap:wrap;">
-                  <button class="btn btn-primary" style="flex:1; min-width:100px;" onclick="Admin.approve('${user.auth_id}')">✅ Approve</button>
-                  <button class="btn btn-ghost" style="flex:1; min-width:100px; border-color:var(--amber); color:var(--amber);" onclick="Admin.reject('${user.auth_id}')">⛔ Reject</button>
-                  <button class="btn btn-ghost" style="width:100%; border-color:var(--rose); color:var(--rose); margin-top:var(--space-xs);" onclick="Admin.banUser('${user.auth_id}')">🚫 Permanently Ban</button>
+                  <button class="btn btn-primary" style="flex:1; min-width:100px;" onclick="Admin.approve('${authId}')">✅ Approve</button>
+                  <button class="btn btn-ghost" style="flex:1; min-width:100px; border-color:var(--amber); color:var(--amber);" onclick="Admin.reject('${authId}')">⛔ Reject</button>
+                  <button class="btn btn-ghost" style="width:100%; border-color:var(--rose); color:var(--rose); margin-top:var(--space-xs);" onclick="Admin.banUser('${authId}')">🚫 Permanently Ban</button>
                 </div>
               </div>
             </div>
@@ -201,11 +257,97 @@ const Admin = {
     }
   },
 
+  async fetchReports() {
+    const container = document.getElementById('admin-content');
+    container.innerHTML = '<div style="text-align:center;padding:40px;color:var(--text-tertiary);">Loading reports... ☕</div>';
+
+    if (!API.isLive || !API.client) {
+      container.innerHTML = '<div style="color:var(--rose);">Live database not connected.</div>';
+      return;
+    }
+
+    try {
+      const reports = await API.fetchReports();
+      const openReports = reports.filter((r) => !r.status || r.status === 'open');
+
+      if (openReports.length === 0) {
+        container.innerHTML = `
+          <div style="text-align:center; padding: 80px 20px;">
+            <div style="font-size:3rem; opacity:0.5; margin-bottom:10px;">✅</div>
+            <h3 style="color:var(--text-secondary);">No open reports</h3>
+            <p style="color:var(--text-tertiary);">The moderation queue is clear.</p>
+          </div>
+        `;
+        return;
+      }
+
+      container.innerHTML = `
+        <table style="width:100%; border-collapse:collapse; font-size:var(--font-size-sm);">
+          <thead>
+            <tr style="border-bottom:2px solid var(--border-default); color:var(--text-tertiary); text-align:left;">
+              <th style="padding:10px 12px;">Reported At</th>
+              <th style="padding:10px 12px;">Reason</th>
+              <th style="padding:10px 12px;">Spill</th>
+              <th style="padding:10px 12px;">Reporter</th>
+              <th style="padding:10px 12px; text-align:right;">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${openReports
+              .map((report) => {
+                const reportId = String(report.id || '').replace(/'/g, "\\'");
+                const spillId = String(report.spill_id || '').replace(/'/g, "\\'");
+                const safeReason = this._safe(report.reason || 'unspecified');
+                const safeReporter = this._safe(report.auth_id || 'unknown');
+                const safeSpill = this._safe(report.spill_id || 'unknown');
+                const safeDate = this._safe(
+                  report.created_at ? new Date(report.created_at).toLocaleString('en-IN') : 'Unknown'
+                );
+
+                return `
+                  <tr style="border-bottom:1px solid var(--border-subtle);">
+                    <td style="padding:10px 12px; color:var(--text-secondary);">${safeDate}</td>
+                    <td style="padding:10px 12px; color:var(--text-primary); font-weight:600;">${safeReason}</td>
+                    <td style="padding:10px 12px; color:var(--text-secondary);">${safeSpill}</td>
+                    <td style="padding:10px 12px; color:var(--text-tertiary);">${safeReporter}</td>
+                    <td style="padding:10px 12px; text-align:right;">
+                      <div style="display:flex; gap:6px; justify-content:flex-end; flex-wrap:wrap;">
+                        <button class="btn btn-ghost" style="font-size:11px; padding:3px 10px; color:#22c55e; border-color:#22c55e;" onclick="Admin.resolveReport('${reportId}','resolved')">✅ Resolve</button>
+                        <button class="btn btn-ghost" style="font-size:11px; padding:3px 10px; color:var(--amber); border-color:var(--amber);" onclick="Admin.resolveReport('${reportId}','dismissed')">📝 Dismiss</button>
+                        ${spillId ? `<button class="btn btn-ghost" style="font-size:11px; padding:3px 10px; color:var(--rose); border-color:var(--rose);" onclick="Admin.nukeSpill('${spillId}')">🗑️ Nuke Spill</button>` : ''}
+                      </div>
+                    </td>
+                  </tr>
+                `;
+              })
+              .join('')}
+          </tbody>
+        </table>
+      `;
+    } catch (err) {
+      console.error(err);
+      container.innerHTML = '<div style="color:var(--rose);">Error loading reports.</div>';
+    }
+  },
+
+  async resolveReport(reportId, status) {
+    if (!reportId) return;
+
+    const ok = await API.resolveReport(reportId, status || 'resolved');
+    if (!ok) {
+      Utils.toast('Failed to update report status.', 'error');
+      return;
+    }
+
+    Utils.toast('Report status updated.', 'success');
+    if (this._tab === 'reports') this.fetchReports();
+  },
+
   async approve(authId) {
     if (!confirm('Approve this student?')) return;
     try {
-      const { error } = await API.client.from('users').update({ verification_status: 'verified' }).eq('auth_id', authId);
-      if (error) throw error;
+      const success = await API.setUserVerificationStatus(authId, 'verified');
+      if (!success) throw new Error('Unable to approve user.');
       Utils.toast('✅ Student approved!', 'success');
       this.fetchPending();
     } catch (err) {
@@ -217,8 +359,8 @@ const Admin = {
   async reject(authId) {
     if (!confirm('Reject this student? This is permanent.')) return;
     try {
-      const { error } = await API.client.from('users').update({ verification_status: 'rejected' }).eq('auth_id', authId);
-      if (error) throw error;
+      const success = await API.setUserVerificationStatus(authId, 'rejected');
+      if (!success) throw new Error('Unable to reject user.');
       Utils.toast('🚫 Student rejected.', 'info');
       this.fetchPending();
     } catch (err) {

@@ -56,6 +56,10 @@ const Pages = {
   },
 
   toggleFollow(pageId) {
+    if (typeof window.App !== 'undefined' && App.requireVerified && !App.requireVerified('follow pages')) {
+      return;
+    }
+
     const user = Storage.getUser();
     const pages = Storage.getPages();
     const pg = pages.find(p => p.id === pageId);
@@ -207,6 +211,10 @@ const Pages = {
   },
 
   toggleJoinGroup(groupId) {
+    if (typeof window.App !== 'undefined' && App.requireVerified && !App.requireVerified('join groups')) {
+      return;
+    }
+
     const user = Storage.getUser();
     const groups = Storage.getGroups();
     const grp = groups.find(g => g.id === groupId);
@@ -317,6 +325,10 @@ const Pages = {
   },
 
   sendGroupMessage(groupId) {
+    if (typeof window.App !== 'undefined' && App.requireVerified && !App.requireVerified('send group messages')) {
+      return;
+    }
+
     const input = document.getElementById('group-chat-input');
     const body = input.value.trim();
     if (!body) return;
@@ -411,6 +423,10 @@ const Pages = {
   },
 
   toggleSubscribe(channelId) {
+    if (typeof window.App !== 'undefined' && App.requireVerified && !App.requireVerified('subscribe to channels')) {
+      return;
+    }
+
     const user = Storage.getUser();
     const channels = Storage.getChannels();
     const ch = channels.find(c => c.id === channelId);

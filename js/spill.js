@@ -173,6 +173,10 @@ const Spill = {
   },
 
   open(templateId) {
+    if (typeof window.App !== 'undefined' && App.requireVerified && !App.requireVerified('post a spill')) {
+      return;
+    }
+
     this.currentAlias = Utils.randomAlias();
     this._updateAliasPreview();
     this._populateColleges();
@@ -244,6 +248,10 @@ const Spill = {
   },
 
   _submit() {
+    if (typeof window.App !== 'undefined' && App.requireVerified && !App.requireVerified('post a spill')) {
+      return;
+    }
+
     const title = document.getElementById('spill-title').value.trim();
     const body = document.getElementById('spill-body').value.trim();
     let collegeId = document.getElementById('spill-college').value;
@@ -301,6 +309,7 @@ const Spill = {
     const user = Storage.getUser();
     const spill = {
       id: Utils.uid(),
+      userId: (window.App && App.session && App.session.user) ? App.session.user.id : null,
       title,
       body,
       collegeId,

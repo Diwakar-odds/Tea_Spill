@@ -32,6 +32,7 @@ const Reader = {
     const myReactions = user.myReactions?.[spill.id] || [];
     const isSaved = user.savedSpills.includes(spill.id);
     const isReported = user.reportedSpills?.includes(spill.id);
+    const canInteract = !(window.App && App.isReadOnly && App.isReadOnly());
     const page = document.getElementById('page-reader');
 
     page.innerHTML = `
@@ -64,7 +65,7 @@ const Reader = {
         <div class="reader-actions" style="display:flex;gap:var(--space-md);padding:var(--space-lg) 0;border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle);margin:var(--space-xl) 0;flex-wrap:wrap">
           ${REACTIONS.map(r => `
             <button class="reaction-btn ${myReactions.includes(r.id) ? 'active' : ''}"
-                    onclick="Reader.react('${r.id}')">
+                    onclick="Reader.react('${r.id}')" ${canInteract ? '' : 'disabled'}>
               <span>${r.emoji}</span>
               <span>${Utils.formatNumber(spill.reactions[r.id] || 0)}</span>
             </button>
@@ -88,8 +89,8 @@ const Reader = {
           <h2 class="comments-title">💬 Comments (${cloudComments.length})</h2>
 
           <div class="comment-input-wrapper">
-            <textarea id="comment-input" placeholder="Drop your take..." rows="2"></textarea>
-            <button class="btn btn-primary btn-sm" onclick="Reader.addComment()" style="align-self:flex-end">Send</button>
+            <textarea id="comment-input" placeholder="${canInteract ? 'Drop your take...' : 'Verification pending. Read-only mode is active.'}" rows="2" ${canInteract ? '' : 'disabled'}></textarea>
+            <button class="btn btn-primary btn-sm" onclick="Reader.addComment()" style="align-self:flex-end" ${canInteract ? '' : 'disabled'}>Send</button>
           </div>
 
           <div id="comments-list">
@@ -151,6 +152,10 @@ const Reader = {
   },
 
   async addComment() {
+    if (typeof window.App !== 'undefined' && App.requireVerified && !App.requireVerified('comment on spills')) {
+      return;
+    }
+
     const input = document.getElementById('comment-input');
     const body = input.value.trim();
     if (!body) return;
@@ -204,16 +209,29 @@ const Reader = {
     document.getElementById('report-modal').classList.add('hidden');
   },
 
-  submitReport(reason) {
-    Storage.addReport({
-      spillId: this.currentSpillId,
-      reason,
-      timestamp: new Date().toISOString()
-    });
+  async submitReport(reason) {
+    let submitted = false;
+    if (window.API && API.isLive) {
+      submitted = await API.submitReport(this.currentSpillId, reason);
+    } else {
+      Storage.addReport({
+        spillId: this.currentSpillId,
+        reason,
+        timestamp: new Date().toISOString()
+      });
+      submitted = true;
+    }
+
+    if (!submitted) {
+      Utils.toast('Could not submit report right now.', 'error');
+      return;
+    }
 
     const user = Storage.getUser();
     if (!user.reportedSpills) user.reportedSpills = [];
-    user.reportedSpills.push(this.currentSpillId);
+    if (!user.reportedSpills.includes(this.currentSpillId)) {
+      user.reportedSpills.push(this.currentSpillId);
+    }
     Storage.saveUser(user);
 
     this.closeReport();

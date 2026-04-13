@@ -1,49 +1,83 @@
 /* ═══════════════════════════════════════════════════
    TEA SPILL ☕ — Supabase API Layer
-   Handles database connection and Google auth.
+   Auth, verification, moderation, reactions, reports.
    ═══════════════════════════════════════════════════ */
 
 'use strict';
 
 const API = {
-  // TODO: Replace these with your actual Supabase URL and ANON Key
-  SUPABASE_URL: 'https://zcxpcozoblyjwquqnwoc.supabase.co',
-  SUPABASE_KEY: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InpjeHBjb3pvYmx5andxdXFud29jIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzU4NDU3MzQsImV4cCI6MjA5MTQyMTczNH0.WC77QdODgBNYXtRjl3EEjnzMJgsPP38dwwZtjyPHPsE',
-
-  // TODO: Replace with your Google OAuth Web Client ID
-  GOOGLE_CLIENT_ID: '426631892589-gf3ldbjt0cuh2pu63ghes7v4s8iuhqi9.apps.googleusercontent.com',
+  SUPABASE_URL: '',
+  SUPABASE_KEY: '',
+  GOOGLE_CLIENT_ID: '',
+  ALLOW_INSECURE_DB_FALLBACK: false,
 
   client: null,
+  session: null,
   isLive: false,
 
+  _readRuntimeConfig() {
+    const runtime =
+      typeof window.TEA_SPILL_CONFIG === 'object' && window.TEA_SPILL_CONFIG
+        ? window.TEA_SPILL_CONFIG
+        : {};
+
+    return {
+      supabaseUrl: runtime.SUPABASE_URL || '',
+      supabaseKey: runtime.SUPABASE_KEY || '',
+      googleClientId: runtime.GOOGLE_CLIENT_ID || '',
+      allowInsecureFallback: !!runtime.ALLOW_INSECURE_DB_FALLBACK
+    };
+  },
+
   init() {
+    const cfg = this._readRuntimeConfig();
+    this.SUPABASE_URL = cfg.supabaseUrl;
+    this.SUPABASE_KEY = cfg.supabaseKey;
+    this.GOOGLE_CLIENT_ID = cfg.googleClientId;
+    this.ALLOW_INSECURE_DB_FALLBACK = cfg.allowInsecureFallback;
+
     try {
-      if (typeof supabase !== 'undefined') {
-        if (this.SUPABASE_URL !== 'https://YOUR_PROJECT.supabase.co') {
-          this.client = supabase.createClient(this.SUPABASE_URL, this.SUPABASE_KEY);
-          this.isLive = true;
-          console.log('[API] Connected to Supabase Cloud Database.');
-        } else {
-          console.warn('[API] Supabase URL not set. Running in Local Mode.');
-        }
+      if (typeof supabase === 'undefined') {
+        console.warn('[API] Supabase SDK not loaded. Running in Local Mode.');
+        return;
+      }
+
+      if (this.SUPABASE_URL && this.SUPABASE_KEY) {
+        this.client = supabase.createClient(this.SUPABASE_URL, this.SUPABASE_KEY);
+        this.isLive = true;
+        console.log('[API] Connected to Supabase Cloud Database.');
+      } else {
+        console.warn('[API] Runtime config missing. Running in Local Mode.');
       }
     } catch (e) {
       console.warn('[API] Failed to initialize Supabase SDK.', e);
     }
   },
 
+  setSession(session) {
+    this.session = session || null;
+  },
+
   async signInWithGoogle() {
     if (!this.isLive) {
-      // Fake login for local dev
-      localStorage.setItem('teaspill_sb_auth', JSON.stringify({
-        userId: 'local_dev_user',
-        email: 'dev@student.edu'
-      }));
+      // Local development fallback
+      localStorage.setItem(
+        'teaspill_sb_auth',
+        JSON.stringify({
+          userId: 'local_dev_user',
+          email: 'dev@student.edu'
+        })
+      );
       window.location.reload();
       return true;
     }
 
-    // Hide main app chrome and show the Google login overlay
+    if (!this.GOOGLE_CLIENT_ID) {
+      console.error('[API] Missing GOOGLE_CLIENT_ID runtime config.');
+      alert('Missing Google Client ID configuration.');
+      return false;
+    }
+
     const loginScreen = document.getElementById('login-screen');
     if (loginScreen && typeof google !== 'undefined') {
       document.getElementById('sidebar').style.display = 'none';
@@ -52,25 +86,29 @@ const API = {
       loginScreen.classList.remove('hidden');
       loginScreen.classList.add('visible');
 
-      // Initialize Native Google Identity Services
       google.accounts.id.initialize({
         client_id: this.GOOGLE_CLIENT_ID,
         callback: this._handleGoogleCallback.bind(this)
       });
 
-      google.accounts.id.renderButton(
-        document.getElementById('google-btn-container'),
-        { theme: 'filled_black', size: 'large', shape: 'rectangular', text: 'continue_with' }
-      );
+      google.accounts.id.renderButton(document.getElementById('google-btn-container'), {
+        theme: 'filled_black',
+        size: 'large',
+        shape: 'rectangular',
+        text: 'continue_with'
+      });
     } else {
-      console.error("[API] Google Identity script not loaded or login screen missing.");
+      console.error('[API] Google Identity script not loaded or login screen missing.');
     }
+
+    return false;
   },
 
   async _handleGoogleCallback(response) {
     const loginScreen = document.getElementById('login-screen');
     if (loginScreen) {
-      loginScreen.innerHTML = '<div style="text-align:center;padding:40px;color:white;font-size:1.2rem;">Authenticating... ☕</div>';
+      loginScreen.innerHTML =
+        '<div style="text-align:center;padding:40px;color:white;font-size:1.2rem;">Authenticating... ☕</div>';
     }
 
     try {
@@ -80,16 +118,17 @@ const API = {
       });
       if (error) throw error;
 
-      // Successfully authenticated! Re-trigger App.init() to route them properly
+      this.setSession(data.session || null);
       window.location.reload();
     } catch (error) {
       console.error('[API Auth] Google Token Sign-In Error:', error);
-      alert("Failed to authenticate with Google via ID Token. Please check your Client ID or origin.");
+      alert('Failed to authenticate with Google. Please verify your client configuration.');
       window.location.reload();
     }
   },
 
   async signOut() {
+    this.setSession(null);
     if (!this.isLive) {
       localStorage.removeItem('teaspill_sb_auth');
       window.location.href = 'index.html';
@@ -101,11 +140,61 @@ const API = {
 
   async getUserSession() {
     if (!this.isLive) {
-      return localStorage.getItem('teaspill_sb_auth') ? { user: { id: 'local_dev_user', email: 'dev@student.edu' } } : null;
+      return localStorage.getItem('teaspill_sb_auth')
+        ? { user: { id: 'local_dev_user', email: 'dev@student.edu' } }
+        : null;
     }
-    const { data: { session }, error } = await this.client.auth.getSession();
-    if (error || !session) return null;
+
+    const {
+      data: { session },
+      error
+    } = await this.client.auth.getSession();
+
+    if (error || !session) {
+      this.setSession(null);
+      return null;
+    }
+
+    this.setSession(session);
     return session;
+  },
+
+  async getCurrentUserId() {
+    if (!this.isLive) return 'local_dev_user';
+    if (this.session && this.session.user && this.session.user.id) return this.session.user.id;
+
+    const { data, error } = await this.client.auth.getUser();
+    if (error || !data || !data.user) return null;
+
+    if (!this.session) this.session = {};
+    this.session.user = data.user;
+    return data.user.id;
+  },
+
+  async _requireAdmin() {
+    const userId = await this.getCurrentUserId();
+    if (!userId) return false;
+    const verif = await this.checkVerificationStatus(userId);
+    return !!verif.isAdmin;
+  },
+
+  async _callAdminRpc(functionName, params, insecureFallbackFn) {
+    try {
+      const { data, error } = await this.client.rpc(functionName, params);
+      if (!error) return { ok: true, data };
+
+      console.error(`[API] RPC ${functionName} failed:`, error);
+
+      if (this.ALLOW_INSECURE_DB_FALLBACK && typeof insecureFallbackFn === 'function') {
+        const fallbackOk = await insecureFallbackFn();
+        return { ok: !!fallbackOk, data: null, fallback: true };
+      }
+
+      return { ok: false, error };
+    } catch (err) {
+      console.error(`[API] RPC ${functionName} exception:`, err);
+      return { ok: false, error: err };
+    }
   },
 
   async checkVerificationStatus(userId) {
@@ -113,29 +202,80 @@ const API = {
       const status = localStorage.getItem('teaspill_verification') || 'unverified';
       return { status, isAdmin: false };
     }
+
+    const authId = userId || (await this.getCurrentUserId());
+    if (!authId) return { status: 'unverified', isAdmin: false };
+
     const { data, error } = await this.client
       .from('users')
       .select('verification_status, is_admin')
-      .eq('auth_id', userId)
+      .eq('auth_id', authId)
       .single();
 
     if (error || !data) {
       console.error('[API Auth] checkVerificationStatus Error:', error);
       return { status: 'unverified', isAdmin: false };
     }
+
     return { status: data.verification_status, isAdmin: data.is_admin };
   },
 
-  /**
-   * Called during onboarding after verifying age, College ID, and parameters.
-   */
-  async submitVerificationDetails(userId, dob, idFileUrl, realName, collegeName, department, section) {
+  async getAdminUsers(status = 'all') {
+    if (!this.isLive || !this.client) return [];
+    const isAdmin = await this._requireAdmin();
+    if (!isAdmin) return [];
+
+    try {
+      const params = status && status !== 'all' ? { p_status: status } : {};
+      const { data, error } = await this.client.rpc('get_admin_users', params);
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error('[API] getAdminUsers error:', err);
+
+      if (!this.ALLOW_INSECURE_DB_FALLBACK) return [];
+
+      let query = this.client.from('users').select('*').order('created_at', { ascending: false });
+      if (status && status !== 'all') query = query.eq('verification_status', status);
+      const { data, error } = await query;
+      if (error) {
+        console.error('[API] getAdminUsers fallback failed:', error);
+        return [];
+      }
+      return data || [];
+    }
+  },
+
+  async setUserVerificationStatus(authId, status) {
+    if (!this.isLive || !authId) return false;
+
+    const allowed = ['verified', 'rejected', 'pending', 'banned'];
+    if (!allowed.includes(status)) return false;
+
+    const isAdmin = await this._requireAdmin();
+    if (!isAdmin) return false;
+
+    const result = await this._callAdminRpc(
+      'admin_set_user_status',
+      { p_target_auth_id: authId, p_status: status },
+      async () => {
+        const { error } = await this.client
+          .from('users')
+          .update({ verification_status: status })
+          .eq('auth_id', authId);
+        return !error;
+      }
+    );
+
+    return result.ok;
+  },
+
+  async submitVerificationDetails(userId, dob, idFilePath, realName, collegeName, department, section) {
     if (!this.isLive) {
       localStorage.setItem('teaspill_verification', 'pending');
       return true;
     }
 
-    // Check if user record exists
     const { data: existingUser } = await this.client
       .from('users')
       .select('id, verification_status')
@@ -149,70 +289,106 @@ const API = {
         return false;
       }
 
-      result = await this.client.from('users').update({
-        dob: dob,
-        id_url: idFileUrl,
-        real_name: realName,
-        college_name: collegeName,
-        department: department,
-        section: section,
-        verification_status: 'pending'
-      }).eq('auth_id', userId);
+      result = await this.client
+        .from('users')
+        .update({
+          dob,
+          id_url: idFilePath,
+          real_name: realName,
+          college_name: collegeName,
+          department,
+          section,
+          verification_status: 'pending'
+        })
+        .eq('auth_id', userId);
     } else {
-      result = await this.client.from('users').insert([{
-        auth_id: userId,
-        username: 'user_' + Math.random().toString(36).substr(2, 9),
-        tea_points: 0,
-        dob: dob,
-        id_url: idFileUrl,
-        real_name: realName,
-        college_name: collegeName,
-        department: department,
-        section: section,
-        verification_status: 'pending'
-      }]);
+      result = await this.client.from('users').insert([
+        {
+          auth_id: userId,
+          username: 'user_' + Math.random().toString(36).slice(2, 11),
+          tea_points: 0,
+          dob,
+          id_url: idFilePath,
+          real_name: realName,
+          college_name: collegeName,
+          department,
+          section,
+          verification_status: 'pending'
+        }
+      ]);
     }
 
     if (result.error) {
       if (result.error.code === '23505') {
         console.warn('[API Auth] Profile already exists, ignoring duplicate insert.');
-        // If it's a duplicate key, they are already inserted! 
-        return true; 
+        return true;
       }
       console.error('[API Auth] Failed to submit verification:', result.error);
       alert('Database Update Error: ' + result.error.message);
       return false;
     }
+
     return true;
   },
 
-  /**
-   * For uploading the college ID photo to storage
-   */
   async uploadCollegeId(file) {
+    if (!file) return null;
+
     if (!this.isLive) {
-      // Simulate file upload
-      return 'https://fake-storage.com/bucket/fake_id.png';
+      return 'verification_ids/local-dev-id.png';
     }
 
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${Math.random()}.${fileExt}`;
+    if (!file.type || !file.type.startsWith('image/')) {
+      alert('Please upload an image file only.');
+      return null;
+    }
+
+    if (file.size > 10 * 1024 * 1024) {
+      alert('File too large. Maximum allowed size is 10MB.');
+      return null;
+    }
+
+    const rawExt = (file.name.split('.').pop() || 'jpg').toLowerCase();
+    const safeExt = rawExt.replace(/[^a-z0-9]/g, '').slice(0, 6) || 'jpg';
+    const fileName = `${Date.now()}-${Math.random().toString(36).slice(2, 10)}.${safeExt}`;
     const filePath = `verification_ids/${fileName}`;
 
     const { error: uploadError } = await this.client.storage
       .from('verification_ids')
-      .upload(filePath, file);
+      .upload(filePath, file, { upsert: false });
 
     if (uploadError) {
       console.error('[API Auth] Upload failed:', uploadError);
       return null;
     }
 
-    const { data } = this.client.storage.from('verification_ids').getPublicUrl(filePath);
-    return data.publicUrl;
+    // Store private path. Admins resolve this to a short-lived signed URL when needed.
+    return filePath;
   },
 
-  /* ─── Comments & Interactions ─── */
+  async resolveVerificationUrl(idReference, expiresIn = 300) {
+    if (!idReference) return null;
+    const ref = String(idReference).trim();
+    if (!ref) return null;
+
+    if (/^https?:\/\//i.test(ref)) {
+      // Legacy records may still contain historical public URLs.
+      return ref;
+    }
+
+    if (!this.isLive || !this.client) return null;
+
+    const { data, error } = await this.client.storage
+      .from('verification_ids')
+      .createSignedUrl(ref, expiresIn);
+
+    if (error) {
+      console.error('[API] Failed to sign verification URL:', error);
+      return null;
+    }
+
+    return data && data.signedUrl ? data.signedUrl : null;
+  },
 
   async fetchComments(spillId) {
     if (!this.isLive) return [];
@@ -233,13 +409,18 @@ const API = {
   async postComment(spillId, body, alias, aliasEmoji) {
     if (!this.isLive) return false;
     try {
-      const { error } = await this.client.from('comments').insert([{
-        auth_id: this.session.user.id,
-        spill_id: spillId,
-        body,
-        alias,
-        alias_emoji: aliasEmoji
-      }]);
+      const authId = await this.getCurrentUserId();
+      if (!authId) return false;
+
+      const { error } = await this.client.from('comments').insert([
+        {
+          auth_id: authId,
+          spill_id: spillId,
+          body,
+          alias,
+          alias_emoji: aliasEmoji
+        }
+      ]);
       if (error) throw error;
       return true;
     } catch (err) {
@@ -249,78 +430,159 @@ const API = {
   },
 
   async reactToSpill(spillId, reactionId) {
-    if (!this.isLive) return false;
+    if (!this.isLive) return { ok: true, reactions: null };
+
     try {
-      // Read-Modify-Write pattern for JSONB
-      const { data: fetch, error: fetchErr } = await this.client
-        .from('spills')
-        .select('reactions')
-        .eq('spill_id', spillId)
-        .single();
-      if (fetchErr) throw fetchErr;
+      const authId = await this.getCurrentUserId();
+      if (!authId) return { ok: false, error: 'unauthorized' };
 
-      const currentReactions = fetch.reactions || { sip: 0, fire: 0, shook: 0, dead: 0, cap: 0 };
-      
-      // Safety increment
-      if (typeof currentReactions[reactionId] === 'number') {
-        currentReactions[reactionId] += 1;
-      } else {
-        currentReactions[reactionId] = 1;
-      }
+      const { data, error } = await this.client.rpc('set_spill_reaction', {
+        p_spill_id: spillId,
+        p_reaction: reactionId
+      });
+      if (error) throw error;
 
-      // Push back up
-      const { error: pushErr } = await this.client
-        .from('spills')
-        .update({ reactions: currentReactions })
-        .eq('spill_id', spillId);
-      if (pushErr) throw pushErr;
-      
-      return true;
+      const row = Array.isArray(data) ? data[0] : data;
+      return { ok: true, reactions: row && row.reactions ? row.reactions : null };
     } catch (err) {
       console.error('[API] reactToSpill error:', err);
+
+      if (this.ALLOW_INSECURE_DB_FALLBACK) {
+        try {
+          const { data: fetch, error: fetchErr } = await this.client
+            .from('spills')
+            .select('reactions')
+            .eq('spill_id', spillId)
+            .single();
+          if (fetchErr) throw fetchErr;
+
+          const currentReactions = fetch.reactions || {
+            sip: 0,
+            fire: 0,
+            shook: 0,
+            dead: 0,
+            cap: 0
+          };
+          currentReactions[reactionId] = (currentReactions[reactionId] || 0) + 1;
+
+          const { error: pushErr } = await this.client
+            .from('spills')
+            .update({ reactions: currentReactions })
+            .eq('spill_id', spillId);
+          if (pushErr) throw pushErr;
+
+          return { ok: true, reactions: currentReactions };
+        } catch (fallbackErr) {
+          console.error('[API] reactToSpill fallback error:', fallbackErr);
+        }
+      }
+
+      return { ok: false, error: err };
+    }
+  },
+
+  async submitReport(spillId, reason) {
+    if (!this.isLive) return false;
+
+    try {
+      const authId = await this.getCurrentUserId();
+      if (!authId) return false;
+
+      const { error } = await this.client.from('reports').insert([
+        {
+          spill_id: spillId,
+          reason,
+          auth_id: authId,
+          status: 'open'
+        }
+      ]);
+      if (error) throw error;
+      return true;
+    } catch (err) {
+      console.error('[API] submitReport error:', err);
       return false;
     }
   },
 
-  /* ─── Admin Moderation Hooks ─── */
+  async fetchReports() {
+    if (!this.isLive) return [];
+    const isAdmin = await this._requireAdmin();
+    if (!isAdmin) return [];
+
+    try {
+      const { data, error } = await this.client
+        .from('reports')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(200);
+
+      if (error) throw error;
+      return data || [];
+    } catch (err) {
+      console.error('[API] fetchReports error:', err);
+      return [];
+    }
+  },
+
+  async resolveReport(reportId, status = 'resolved') {
+    if (!this.isLive || !reportId) return false;
+    const isAdmin = await this._requireAdmin();
+    if (!isAdmin) return false;
+
+    const result = await this._callAdminRpc(
+      'admin_resolve_report',
+      { p_report_id: reportId, p_status: status },
+      async () => {
+        const { error } = await this.client
+          .from('reports')
+          .update({ status })
+          .eq('id', reportId)
+          .eq('status', 'open');
+        return !error;
+      }
+    );
+
+    return result.ok;
+  },
 
   async deleteSpill(spillId) {
     if (!this.isLive) return false;
-    try {
-      const { error } = await this.client.from('spills').delete().eq('spill_id', spillId);
-      if (error) throw error;
-      return true;
-    } catch (err) {
-      console.error('[API] deleteSpill error:', err);
-      return false;
-    }
+    const isAdmin = await this._requireAdmin();
+    if (!isAdmin) return false;
+
+    const result = await this._callAdminRpc(
+      'admin_delete_spill',
+      { p_spill_id: spillId },
+      async () => {
+        const { error } = await this.client.from('spills').delete().eq('spill_id', spillId);
+        return !error;
+      }
+    );
+
+    return result.ok;
   },
 
   async deleteComment(commentId) {
     if (!this.isLive) return false;
-    try {
-      const { error } = await this.client.from('comments').delete().eq('id', commentId);
-      if (error) throw error;
-      return true;
-    } catch (err) {
-      console.error('[API] deleteComment error:', err);
-      return false;
-    }
+    const isAdmin = await this._requireAdmin();
+    if (!isAdmin) return false;
+
+    const result = await this._callAdminRpc(
+      'admin_delete_comment',
+      { p_comment_id: commentId },
+      async () => {
+        const { error } = await this.client.from('comments').delete().eq('id', commentId);
+        return !error;
+      }
+    );
+
+    return result.ok;
   },
 
-  async banUser(userId) {
-    if (!this.isLive) return false;
-    try {
-      // Provide the users table UUID instead of the auth_id
-      const { error } = await this.client.from('users').update({ verification_status: 'banned' }).eq('id', userId);
-      if (error) throw error;
-      return true;
-    } catch (err) {
-      console.error('[API] banUser error:', err);
-      return false;
-    }
+  async banUser(userAuthId) {
+    return this.setUserVerificationStatus(userAuthId, 'banned');
   }
 };
 
-// Initialize the API handler immediately
+// Initialize immediately
 API.init();

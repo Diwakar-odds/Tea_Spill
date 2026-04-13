@@ -1,0 +1,9 @@
+[build]
+  publish = "."
+  command = "bash scripts/netlify-build.sh"
+
+[[headers]]
+  for = "/runtime-config.js"
+
+  [headers.values]
+    Cache-Control = "no-store, max-age=0"

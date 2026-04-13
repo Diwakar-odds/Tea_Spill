@@ -133,7 +133,7 @@ const Utils = {
     if (!container) return;
     const toast = document.createElement('div');
     toast.className = `toast ${type}`;
-    toast.innerHTML = message;
+    toast.textContent = message;
     container.appendChild(toast);
     setTimeout(() => {
       toast.style.opacity = '0';
@@ -141,6 +141,10 @@ const Utils = {
       toast.style.transition = 'all 0.3s ease';
       setTimeout(() => toast.remove(), 300);
     }, 3000);
+  },
+
+  showToast(message, type = 'info') {
+    this.toast(message, type);
   },
 
   /** Count spills for a given category. */

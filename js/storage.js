@@ -99,10 +99,21 @@ const Storage = {
   saveUser(user, skipCloudSync = false) { 
     this.set('user', user); 
     
-    // Cross-Platform Sync: Push profile state into Google Auth MetaData
+    // Cross-device sync stores only minimal public profile fields.
     if (!skipCloudSync && window.API && API.client) {
+      const safeProfile = {
+        alias: user.alias,
+        aliasEmoji: user.aliasEmoji,
+        teaPoints: user.teaPoints || 0,
+        spills: user.spills || 0,
+        reactions: user.reactions || 0,
+        joined: user.joined || new Date().toISOString(),
+        collegeName: user.collegeName || null,
+        department: user.department || null
+      };
+
       API.client.auth.updateUser({ 
-        data: { tea_profile: user } 
+        data: { tea_profile: safeProfile } 
       }).catch(err => console.warn('[Cloud Sync] Meta backup failed:', err));
     }
   },
@@ -123,6 +134,13 @@ const Storage = {
   },
 
   addSpill(spill) {
+    if (window.App && App.isReadOnly && App.isReadOnly()) {
+      if (window.Utils && Utils.toast) {
+        Utils.toast('Your account is pending verification. You cannot post yet.', 'error');
+      }
+      return this.getSpills();
+    }
+
     const spills = this.getSpills();
     spills.unshift(spill);
     this.saveSpills(spills);
@@ -132,21 +150,27 @@ const Storage = {
       const collegeObj = this.getColleges().find(c => c.id === spill.collegeId);
       const cName = collegeObj ? collegeObj.name : 'Unknown College';
 
-      API.client.from('spills').insert([{
-        spill_id: spill.id,
-        college_id: spill.collegeId,
-        college_name: cName,
-        department: spill.department || null,
-        section: spill.section || null,
-        category: spill.category,
-        title: spill.title,
-        body: spill.body,
-        alias: spill.alias,
-        alias_emoji: spill.aliasEmoji,
-        self_destruct: spill.selfDestruct || false,
-        reactions: { sip: 0, fire: 0, shook: 0, dead: 0, cap: 0 }
-      }]).then(({ error }) => {
-        if (error) console.warn('[Storage] Failed to push spill to Supabase:', error);
+      API.getCurrentUserId().then((authId) => {
+        const payload = {
+          spill_id: spill.id,
+          college_id: spill.collegeId,
+          college_name: cName,
+          department: spill.department || null,
+          section: spill.section || null,
+          category: spill.category,
+          title: spill.title,
+          body: spill.body,
+          alias: spill.alias,
+          alias_emoji: spill.aliasEmoji,
+          self_destruct: spill.selfDestruct || false,
+          reactions: { sip: 0, fire: 0, shook: 0, dead: 0, cap: 0 }
+        };
+
+        if (authId) payload.user_id = authId;
+
+        API.client.from('spills').insert([payload]).then(({ error }) => {
+          if (error) console.warn('[Storage] Failed to push spill to Supabase:', error);
+        });
       });
     }
 
@@ -202,11 +226,9 @@ const Storage = {
         createdAt: new Date(r.created_at).getTime()
       }));
 
-      // Update local storage explicitly
-      if (cloudSpills.length > 0) {
-        this.saveSpills(cloudSpills);
-        console.log('[Storage] Live spills synced from Supabase.');
-      }
+      // Update local storage explicitly, including the empty state.
+      this.saveSpills(cloudSpills);
+      console.log('[Storage] Live spills synced from Supabase.');
     } catch (e) {
       console.warn('[Storage] Background sync exception:', e);
     }

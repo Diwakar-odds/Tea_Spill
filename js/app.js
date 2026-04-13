@@ -16,6 +16,7 @@ const App = {
   currentPage: 'feed',
   previousPage: 'feed',
   history: [],
+  verificationStatus: 'unverified',
 
   /* ─── Onboarding state ─── */
   _onboardingAlias: null,
@@ -37,10 +38,17 @@ const App = {
         return;
       }
       this.session = session;
+      if (window.API && typeof API.setSession === 'function') {
+        API.setSession(session);
+      }
 
       // Cross-Platform Sync: Clone Cloud Profile to Local Device Memory
       if (session.user.user_metadata && session.user.user_metadata.tea_profile) {
-        Storage.saveUser(session.user.user_metadata.tea_profile, true);
+        const mergedProfile = {
+          ...Storage.getUser(),
+          ...session.user.user_metadata.tea_profile
+        };
+        Storage.saveUser(mergedProfile, true);
       }
 
       // Pre-fetch live community content before unveiling the app
@@ -67,8 +75,8 @@ const App = {
       if (verif.status === 'unverified') {
         this._showOnboarding();
       } else {
-        if (typeof Utils !== 'undefined' && Utils.showToast) {
-          Utils.showToast("Welcome back! Automatically signed in.", "success");
+        if (typeof Utils !== 'undefined' && Utils.toast) {
+          Utils.toast('Welcome back! Automatically signed in.', 'success');
         }
         this._enterApp(verif.status);
       }
@@ -196,6 +204,8 @@ const App = {
      ═══════════════════════════════════════════ */
 
   async _enterApp(status = 'verified') {
+    this.verificationStatus = status;
+
     // Restore app chrome visibility
     document.getElementById('sidebar').style.display = '';
     document.getElementById('main-content').style.display = '';
@@ -218,7 +228,7 @@ const App = {
     this._bindNavigation();
 
     // Apply read-only mode for pending users
-    if (status !== 'verified') {
+    if (this.isReadOnly()) {
       const spillBtns = document.querySelectorAll('[data-action="new-spill"]');
       spillBtns.forEach(btn => {
         btn.style.opacity = '0.5';
@@ -226,7 +236,7 @@ const App = {
         btn.addEventListener('click', (e) => {
           e.preventDefault();
           e.stopPropagation();
-          Utils.showToast("Your account is pending verification. You can read, but you cannot spill tea yet!", "error");
+          Utils.toast('Your account is pending verification. You can read, but you cannot post yet!', 'error');
         }, { capture: true });
       });
     }
@@ -239,13 +249,31 @@ const App = {
      NAVIGATION
      ═══════════════════════════════════════════ */
 
+  isReadOnly() {
+    return this.verificationStatus !== 'verified';
+  },
+
+  requireVerified(actionLabel = 'do that') {
+    if (!this.isReadOnly()) return true;
+    if (typeof Utils !== 'undefined' && Utils.toast) {
+      Utils.toast(`Your account is pending verification. You cannot ${actionLabel} yet.`, 'error');
+    }
+    return false;
+  },
+
   /**
    * Navigate to a page with optional data payload.
    * @param {string} page
    * @param {*} [data]
    */
-  navigate(page, data) {
-    this.history.push({ page: this.currentPage, data: null });
+  navigate(page, data, options = {}) {
+    const shouldPushHistory =
+      !options.skipHistory && this.currentPage && (page !== this.currentPage || data != null);
+
+    if (shouldPushHistory) {
+      this.history.push({ page: this.currentPage, data: null });
+    }
+
     this.previousPage = this.currentPage;
     this.currentPage = page;
 
@@ -280,11 +308,15 @@ const App = {
 
   /** Go back to the previous page. */
   goBack() {
-    const prev = this.history.pop();
+    let prev = this.history.pop();
+    while (prev && prev.page === this.currentPage && this.history.length > 0) {
+      prev = this.history.pop();
+    }
+
     if (prev) {
-      this.navigate(prev.page, prev.data);
+      this.navigate(prev.page, prev.data, { skipHistory: true });
     } else {
-      this.navigate('feed');
+      this.navigate('feed', null, { skipHistory: true });
     }
   },
 
@@ -339,6 +371,7 @@ const App = {
       const spillAction = e.target.closest('[data-action="new-spill"]');
       if (spillAction) {
         e.preventDefault();
+        if (!this.requireVerified('create a new spill')) return;
         Spill.open();
         return;
       }
