@@ -9,6 +9,7 @@
     "mobile:prepare": "npm run config:runtime && node scripts/prepare-mobile-web.mjs",
     "mobile:copy": "npm run mobile:prepare && npx cap copy android",
     "mobile:sync": "npm run mobile:prepare && npx cap sync android",
+    "mobile:icon": "node scripts/apply-android-icon.mjs",
     "mobile:doctor": "node scripts/android-sdk-doctor.mjs",
     "mobile:open": "npm run mobile:sync && npx cap open android",
     "mobile:apk:debug": "npm run mobile:sync && npm run mobile:doctor && node scripts/run-gradle.mjs assembleDebug",

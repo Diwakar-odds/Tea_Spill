@@ -1,6 +1,6 @@
 {
   "appId": "com.teaspill.app",
-  "appName": "Tea Spill",
+  "appName": "Spill Wise",
   "webDir": "dist-mobile",
   "server": {
     "url": "https://spill-wise.netlify.app/app.html",

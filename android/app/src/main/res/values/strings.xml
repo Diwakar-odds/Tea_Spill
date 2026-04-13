@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">Tea Spill</string>
-    <string name="title_activity_main">Tea Spill</string>
+    <string name="app_name">Spill Wise</string>
+    <string name="title_activity_main">Spill Wise</string>
     <string name="package_name">com.teaspill.app</string>
     <string name="custom_url_scheme">com.teaspill.app</string>
 </resources>
