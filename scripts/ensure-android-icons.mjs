@@ -44,6 +44,7 @@ const resDir = path.join(rootDir, 'android', 'app', 'src', 'main', 'res');
 const brandingIcon = path.join(rootDir, 'branding', 'spill-wise-logo.png');
 const densities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'];
 const iconNames = ['ic_launcher.png', 'ic_launcher_round.png', 'ic_launcher_foreground.png'];
+const adaptiveForegroundDrawable = path.join(resDir, 'drawable', 'ic_launcher_foreground_custom.png');
 
 const candidateBaseIcons = [];
 for (const density of densities) {
@@ -61,6 +62,13 @@ if (!sourceIcon) {
 }
 
 let repaired = 0;
+
+if (!isPngFile(adaptiveForegroundDrawable)) {
+  fs.mkdirSync(path.dirname(adaptiveForegroundDrawable), { recursive: true });
+  fs.copyFileSync(sourceIcon, adaptiveForegroundDrawable);
+  repaired += 1;
+}
+
 for (const density of densities) {
   const dir = path.join(resDir, `mipmap-${density}`);
   if (!fs.existsSync(dir)) continue;

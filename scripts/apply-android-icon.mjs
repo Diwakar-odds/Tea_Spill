@@ -73,6 +73,7 @@ const sourcePath = resolveSourceIcon();
 const targetBaseDir = path.join(rootDir, 'android', 'app', 'src', 'main', 'res');
 const densities = ['mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'];
 const iconFiles = ['ic_launcher.png', 'ic_launcher_foreground.png', 'ic_launcher_round.png'];
+const adaptiveForegroundDrawable = path.join(targetBaseDir, 'drawable', 'ic_launcher_foreground_custom.png');
 
 function isPngFile(filePath) {
   const signature = Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]);
@@ -118,5 +119,8 @@ for (const density of densities) {
     fs.copyFileSync(sourcePath, targetPath);
   }
 }
+
+fs.mkdirSync(path.dirname(adaptiveForegroundDrawable), { recursive: true });
+fs.copyFileSync(sourcePath, adaptiveForegroundDrawable);
 
 console.log('[mobile-icon] Android launcher icon assets replaced successfully.');

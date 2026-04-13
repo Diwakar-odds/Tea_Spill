@@ -37,6 +37,8 @@ What this does:
 3. Repairs missing/invalid Android launcher icon files if needed.
 4. Syncs the web bundle into `android/`.
 
+The build now uses a dedicated adaptive icon foreground drawable (`@drawable/ic_launcher_foreground_custom`) to avoid `mipmap/ic_launcher_foreground not found` linker failures.
+
 Optional hosted mode (loads live website URL inside app):
 
 ```bash
