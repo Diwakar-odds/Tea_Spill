@@ -2,6 +2,14 @@
 
 This repo is configured to wrap the web app into an Android app using Capacitor.
 
+Default mode is now **hybrid local-first OTA**:
+
+1. App boots from local bundle (reliable open).
+2. If live site is reachable, app switches to hosted URL automatically.
+3. If live site is unavailable, app stays on local bundle.
+
+This gives reliability + no APK rebuild for normal web updates.
+
 ## 1) One-time setup
 
 ```bash
@@ -27,6 +35,25 @@ What this does:
 1. Generates `runtime-config.js` from `.env` values.
 2. Creates a clean `dist-mobile/` web bundle.
 3. Syncs that bundle into `android/`.
+
+Optional hosted mode (loads live website URL inside app):
+
+```bash
+npm run mobile:sync:hosted
+```
+
+Use hosted mode only if you specifically want no-rebuild web updates.
+
+## Hybrid OTA config (optional)
+
+Set these values before build (in your environment):
+
+- `MOBILE_OTA_MODE=hybrid` (default, recommended)
+- `MOBILE_OTA_MODE=local-only` (disable hosted auto-switch)
+- `MOBILE_REMOTE_APP_URL=https://spill-wise.netlify.app/app.html`
+- `MOBILE_REMOTE_BOOT_TIMEOUT_MS=2500`
+
+If you do not set them, defaults are used.
 
 ## 3) Build a quick installable APK (fastest)
 
@@ -66,6 +93,8 @@ Recommended for most modern phones:
 
 - Use the signed `arm64-v8a` APK (usually much smaller than universal).
 
+For most stable user experience with automatic web updates, keep hybrid defaults and build via `mobile:sync`.
+
 ## 5) Publish APK on your website
 
 1. Copy your signed `arm64-v8a` APK to `downloads/TeaSpill-latest.apk`
@@ -83,3 +112,4 @@ Your landing page already links to this APK path.
 - If build says SDK not found, install Android SDK from Android Studio and run `npm run mobile:doctor`.
 - Debug APK is fine for testing and quick sharing.
 - For broader public sharing, use a signed release APK.
+- If old app install behaves oddly, uninstall old app first, then install new signed APK.

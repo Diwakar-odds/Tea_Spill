@@ -24,6 +24,9 @@ const App = {
   _onboardingEmoji: null,
 
   async init() {
+    const switchedToHosted = await this._tryHybridHostedTakeover();
+    if (switchedToHosted) return;
+
     // Load full college database first
     await Storage.loadCollegesJSON();
 
@@ -257,6 +260,53 @@ const App = {
 
     // Keep community feed fresh across devices while app is open.
     this._startLiveSyncLoop();
+  },
+
+  async _tryHybridHostedTakeover() {
+    const cfg =
+      typeof window.TEA_SPILL_CONFIG === 'object' && window.TEA_SPILL_CONFIG
+        ? window.TEA_SPILL_CONFIG
+        : {};
+
+    const otaMode = String(cfg.MOBILE_OTA_MODE || 'hybrid').toLowerCase();
+    if (otaMode !== 'hybrid') return false;
+
+    const host = (window.location && window.location.hostname) || '';
+    const isLocalWebViewHost = host === 'localhost' || host === '127.0.0.1';
+    if (!isLocalWebViewHost) return false;
+
+    const cap = window.Capacitor || null;
+    const platform = cap && typeof cap.getPlatform === 'function' ? cap.getPlatform() : 'web';
+    const isNativeApp = platform === 'android' || platform === 'ios';
+    if (!isNativeApp) return false;
+
+    if (sessionStorage.getItem('ts_hybrid_remote_attempted') === '1') return false;
+    sessionStorage.setItem('ts_hybrid_remote_attempted', '1');
+
+    const remoteUrl = String(cfg.MOBILE_REMOTE_APP_URL || '').trim();
+    if (!remoteUrl || !/^https:\/\//i.test(remoteUrl)) return false;
+
+    const timeoutMs = Number.parseInt(cfg.MOBILE_REMOTE_BOOT_TIMEOUT_MS, 10) || 2500;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), timeoutMs);
+
+    try {
+      await fetch(remoteUrl, {
+        method: 'GET',
+        mode: 'no-cors',
+        cache: 'no-store',
+        signal: controller.signal
+      });
+
+      const joiner = remoteUrl.includes('?') ? '&' : '?';
+      window.location.replace(`${remoteUrl}${joiner}mobile_mode=hybrid`);
+      return true;
+    } catch (error) {
+      console.info('[App Hybrid] Remote app unavailable. Staying on local bundle.', error);
+      return false;
+    } finally {
+      clearTimeout(timeout);
+    }
   },
 
   /* ═══════════════════════════════════════════

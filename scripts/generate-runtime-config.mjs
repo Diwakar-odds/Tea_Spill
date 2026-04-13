@@ -50,8 +50,15 @@ const mergedEnv = {
 const supabaseUrlRaw = mergedEnv.SUPABASE_URL || '';
 const supabaseKeyRaw = mergedEnv.SUPABASE_ANON_KEY || mergedEnv.SUPABASE_KEY || '';
 const googleClientIdRaw = mergedEnv.GOOGLE_CLIENT_ID || '';
+const mobileOtaModeRaw = (mergedEnv.MOBILE_OTA_MODE || 'hybrid').trim();
+const mobileRemoteAppUrlRaw = (
+  mergedEnv.MOBILE_REMOTE_APP_URL || 'https://spill-wise.netlify.app/app.html'
+).trim();
+const mobileRemoteBootTimeoutRaw = String(mergedEnv.MOBILE_REMOTE_BOOT_TIMEOUT_MS || '2500').trim();
+const parsedBootTimeout = Number.parseInt(mobileRemoteBootTimeoutRaw, 10);
+const mobileRemoteBootTimeoutMs = Number.isFinite(parsedBootTimeout) ? parsedBootTimeout : 2500;
 
-const configContent = `window.TEA_SPILL_CONFIG = {\n  SUPABASE_URL: "${escapeForJs(supabaseUrlRaw)}",\n  SUPABASE_KEY: "${escapeForJs(supabaseKeyRaw)}",\n  GOOGLE_CLIENT_ID: "${escapeForJs(googleClientIdRaw)}",\n  ALLOW_INSECURE_DB_FALLBACK: false\n};\n`;
+const configContent = `window.TEA_SPILL_CONFIG = {\n  SUPABASE_URL: "${escapeForJs(supabaseUrlRaw)}",\n  SUPABASE_KEY: "${escapeForJs(supabaseKeyRaw)}",\n  GOOGLE_CLIENT_ID: "${escapeForJs(googleClientIdRaw)}",\n  ALLOW_INSECURE_DB_FALLBACK: false,\n  MOBILE_OTA_MODE: "${escapeForJs(mobileOtaModeRaw)}",\n  MOBILE_REMOTE_APP_URL: "${escapeForJs(mobileRemoteAppUrlRaw)}",\n  MOBILE_REMOTE_BOOT_TIMEOUT_MS: ${mobileRemoteBootTimeoutMs}\n};\n`;
 
 fs.writeFileSync(outputPath, configContent, 'utf8');
 
