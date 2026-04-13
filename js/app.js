@@ -17,6 +17,7 @@ const App = {
   previousPage: 'feed',
   history: [],
   verificationStatus: 'unverified',
+  _liveSyncTimer: null,
 
   /* ─── Onboarding state ─── */
   _onboardingAlias: null,
@@ -49,6 +50,16 @@ const App = {
           ...session.user.user_metadata.tea_profile
         };
         Storage.saveUser(mergedProfile, true);
+      }
+
+      // Ensure a canonical DB profile exists and align local alias/profile fields.
+      const dbProfile = await API.getOrCreateUserProfile(session.user.id);
+      if (dbProfile) {
+        const mergedLocal = { ...Storage.getUser() };
+        if (dbProfile.username) mergedLocal.alias = dbProfile.username;
+        if (dbProfile.college_name) mergedLocal.collegeName = dbProfile.college_name;
+        if (dbProfile.department) mergedLocal.department = dbProfile.department;
+        Storage.saveUser(mergedLocal, true);
       }
 
       // Pre-fetch live community content before unveiling the app
@@ -243,6 +254,9 @@ const App = {
 
     // Default page
     this.navigate('feed');
+
+    // Keep community feed fresh across devices while app is open.
+    this._startLiveSyncLoop();
   },
 
   /* ═══════════════════════════════════════════
@@ -406,6 +420,23 @@ const App = {
         const shareModal = document.getElementById('share-modal');
         if (shareModal) shareModal.classList.add('hidden');
       }
+    });
+  },
+
+  _startLiveSyncLoop() {
+    if (this._liveSyncTimer || !window.API || !API.isLive) return;
+
+    const runSync = async () => {
+      await Storage.syncSpillsFromCloud();
+      if (this.currentPage === 'feed' && typeof Feed !== 'undefined' && Feed.render) {
+        Feed.render();
+      }
+    };
+
+    this._liveSyncTimer = setInterval(runSync, 15000);
+
+    document.addEventListener('visibilitychange', () => {
+      if (!document.hidden) runSync();
     });
   }
 };

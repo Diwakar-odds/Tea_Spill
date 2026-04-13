@@ -796,6 +796,40 @@ select option {
   gap: var(--space-md);
   margin-top: var(--space-xl);
 }
+.profile-details-card {
+  margin-bottom: var(--space-3xl);
+  padding: var(--space-xl);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  background: var(--bg-card);
+}
+.profile-details-title {
+  font-size: var(--font-size-lg);
+  margin-bottom: var(--space-lg);
+}
+.profile-details-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-md);
+}
+.profile-detail-item {
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-elevated);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.profile-detail-label {
+  font-size: var(--font-size-xs);
+  color: var(--text-muted);
+}
+.profile-detail-value {
+  font-size: var(--font-size-sm);
+  color: var(--text-primary);
+  font-weight: 600;
+}
 .badge {
   display: inline-flex;
   align-items: center;

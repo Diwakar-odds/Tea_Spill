@@ -171,6 +171,104 @@ const API = {
     return data.user.id;
   },
 
+  _normalizeUsername(value) {
+    return String(value || '')
+      .trim()
+      .replace(/\s+/g, '_')
+      .replace(/[^a-zA-Z0-9_]/g, '')
+      .slice(0, 32);
+  },
+
+  _buildDefaultUsername() {
+    let candidate = '';
+
+    if (
+      this.session &&
+      this.session.user &&
+      this.session.user.user_metadata &&
+      this.session.user.user_metadata.tea_profile
+    ) {
+      candidate = this.session.user.user_metadata.tea_profile.alias || '';
+    }
+
+    if (!candidate && typeof Storage !== 'undefined' && Storage.getUser) {
+      const local = Storage.getUser();
+      candidate = local && local.alias ? local.alias : '';
+    }
+
+    if (!candidate && this.session && this.session.user && this.session.user.email) {
+      const emailPrefix = String(this.session.user.email).split('@')[0] || '';
+      candidate = `user_${emailPrefix}`;
+    }
+
+    const normalized = this._normalizeUsername(candidate);
+    return normalized || `user_${Math.random().toString(36).slice(2, 11)}`;
+  },
+
+  async getOrCreateUserProfile(userId) {
+    if (!this.isLive || !this.client) return null;
+
+    const authId = userId || (await this.getCurrentUserId());
+    if (!authId) return null;
+
+    const cols =
+      'id, auth_id, username, real_name, college_name, department, section, dob, id_url, tea_points, verification_status, is_admin, created_at';
+    const { data: existing, error: fetchError } = await this.client
+      .from('users')
+      .select(cols)
+      .eq('auth_id', authId)
+      .maybeSingle();
+
+    if (fetchError) {
+      console.error('[API Auth] getOrCreateUserProfile fetch error:', fetchError);
+      return null;
+    }
+
+    if (existing) return existing;
+
+    const username = this._buildDefaultUsername();
+
+    const { data: created, error: createError } = await this.client
+      .from('users')
+      .insert([
+        {
+          auth_id: authId,
+          username,
+          tea_points: 0,
+          verification_status: 'unverified'
+        }
+      ])
+      .select(cols)
+      .maybeSingle();
+
+    if (createError) {
+      if (createError.code === '23505') {
+        const { data: retry, error: retryError } = await this.client
+          .from('users')
+          .select(cols)
+          .eq('auth_id', authId)
+          .maybeSingle();
+
+        if (retryError) {
+          console.error('[API Auth] getOrCreateUserProfile retry fetch error:', retryError);
+          return null;
+        }
+
+        return retry || null;
+      }
+
+      console.error('[API Auth] getOrCreateUserProfile create error:', createError);
+      return null;
+    }
+
+    return created || null;
+  },
+
+  async getMyProfile(userId) {
+    if (!this.isLive || !this.client) return null;
+    return this.getOrCreateUserProfile(userId);
+  },
+
   async _requireAdmin() {
     const userId = await this.getCurrentUserId();
     if (!userId) return false;
@@ -210,14 +308,26 @@ const API = {
       .from('users')
       .select('verification_status, is_admin')
       .eq('auth_id', authId)
-      .single();
+      .maybeSingle();
 
-    if (error || !data) {
+    if (error) {
       console.error('[API Auth] checkVerificationStatus Error:', error);
       return { status: 'unverified', isAdmin: false };
     }
 
-    return { status: data.verification_status, isAdmin: data.is_admin };
+    if (!data) {
+      const profile = await this.getOrCreateUserProfile(authId);
+      if (!profile) return { status: 'unverified', isAdmin: false };
+      return {
+        status: profile.verification_status || 'unverified',
+        isAdmin: !!profile.is_admin
+      };
+    }
+
+    return {
+      status: data.verification_status || 'unverified',
+      isAdmin: !!data.is_admin
+    };
   },
 
   async getAdminUsers(status = 'all') {
@@ -276,11 +386,19 @@ const API = {
       return true;
     }
 
-    const { data: existingUser } = await this.client
+    const { data: existingUser, error: existingError } = await this.client
       .from('users')
       .select('id, verification_status')
       .eq('auth_id', userId)
-      .single();
+      .maybeSingle();
+
+    if (existingError) {
+      console.error('[API Auth] Failed to check existing profile:', existingError);
+      alert('Could not load your profile. Please try again.');
+      return false;
+    }
+
+    const persistedUsername = this._buildDefaultUsername();
 
     let result;
     if (existingUser) {
@@ -292,6 +410,7 @@ const API = {
       result = await this.client
         .from('users')
         .update({
+          username: persistedUsername,
           dob,
           id_url: idFilePath,
           real_name: realName,
@@ -305,7 +424,7 @@ const API = {
       result = await this.client.from('users').insert([
         {
           auth_id: userId,
-          username: 'user_' + Math.random().toString(36).slice(2, 11),
+          username: persistedUsername,
           tea_points: 0,
           dob,
           id_url: idFilePath,

@@ -247,7 +247,7 @@ const Spill = {
     document.body.style.overflow = '';
   },
 
-  _submit() {
+  async _submit() {
     if (typeof window.App !== 'undefined' && App.requireVerified && !App.requireVerified('post a spill')) {
       return;
     }
@@ -325,7 +325,16 @@ const Spill = {
       createdAt: Date.now()
     };
 
-    Storage.addSpill(spill);
+    const addResult = await Storage.addSpill(spill);
+    if (!addResult || !addResult.ok) {
+      const msg = String(addResult && addResult.error ? addResult.error : 'Could not post right now.');
+      if (/row-level security|permission|violates/i.test(msg)) {
+        Utils.toast('Post blocked by server policy. Verify your account status first.', 'error');
+      } else {
+        Utils.toast('Could not publish this spill: ' + msg, 'error');
+      }
+      return;
+    }
 
     // Update user stats
     user.mySpillIds = user.mySpillIds || [];

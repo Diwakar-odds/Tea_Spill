@@ -8,10 +8,52 @@
 
 const Profile = {
 
-  render() {
+  async render() {
     const page = document.getElementById('page-profile');
-    const user = Storage.getUser();
+    if (!page) return;
+
+    let user = Storage.getUser();
     const spills = Storage.getSpills();
+    let dbProfile = null;
+
+    if (window.API && API.isLive && typeof API.getMyProfile === 'function') {
+      try {
+        dbProfile = await API.getMyProfile();
+        if (dbProfile) {
+          const mergedUser = { ...user };
+          if (dbProfile.username) mergedUser.alias = dbProfile.username;
+          if (typeof dbProfile.tea_points === 'number') mergedUser.teaPoints = dbProfile.tea_points;
+          if (dbProfile.college_name) mergedUser.collegeName = dbProfile.college_name;
+          if (dbProfile.department) mergedUser.department = dbProfile.department;
+          if (dbProfile.section) mergedUser.section = dbProfile.section;
+          if (!mergedUser.joined && dbProfile.created_at) mergedUser.joined = dbProfile.created_at;
+          user = mergedUser;
+          Storage.saveUser(user, true);
+        }
+      } catch (err) {
+        console.warn('[Profile] Failed to load live profile data:', err);
+      }
+    }
+
+    const joinedSource = dbProfile?.created_at || user.joined || new Date().toISOString();
+    const joinedLabel = new Date(joinedSource).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' });
+    const verificationStatus = String(dbProfile?.verification_status || App.verificationStatus || 'unverified').toLowerCase();
+    const verificationLabel = verificationStatus.charAt(0).toUpperCase() + verificationStatus.slice(1);
+    const accountRole = dbProfile?.is_admin ? 'Admin' : 'User';
+    const collegeName = dbProfile?.college_name || user.collegeName || 'Not submitted';
+    const department = dbProfile?.department || user.department || 'Not submitted';
+    const section = dbProfile?.section || user.section || 'Not submitted';
+    const realName = dbProfile?.real_name || 'Not submitted';
+    const dobLabel = dbProfile?.dob ? new Date(dbProfile.dob).toLocaleDateString('en-IN') : 'Not submitted';
+    const idDocLabel = dbProfile?.id_url ? 'Uploaded' : 'Not uploaded';
+    const statusClass =
+      verificationStatus === 'verified'
+        ? 'badge-emerald'
+        : verificationStatus === 'pending'
+          ? 'badge-amber'
+          : verificationStatus === 'banned'
+            ? 'badge-purple'
+            : '';
 
     // Calculate derived stats
     user.mySpillIds = user.mySpillIds || [];
@@ -40,7 +82,7 @@ const Profile = {
         <div class="profile-avatar-large">${user.aliasEmoji}</div>
         <h1 class="profile-display-name">${Utils.escapeHtml(user.alias)}</h1>
         <p class="profile-college-info">
-          Anonymous Tea Spiller · Joined ${new Date(user.joined).toLocaleDateString('en-IN', { month: 'short', year: 'numeric' })}
+          Anonymous Tea Spiller · Joined ${joinedLabel}
         </p>
 
         <div class="profile-stats">
@@ -59,6 +101,44 @@ const Profile = {
           <div class="profile-stat">
             <div class="profile-stat-value">${totalReactionsReceived}</div>
             <div class="profile-stat-label">Received</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="profile-details-card">
+        <h2 class="section-title profile-details-title">🪪 Profile Details</h2>
+        <div class="profile-details-grid">
+          <div class="profile-detail-item">
+            <span class="profile-detail-label">Account Role</span>
+            <span class="profile-detail-value">${Utils.escapeHtml(accountRole)}</span>
+          </div>
+          <div class="profile-detail-item">
+            <span class="profile-detail-label">Verification</span>
+            <span class="badge ${statusClass}">${Utils.escapeHtml(verificationLabel)}</span>
+          </div>
+          <div class="profile-detail-item">
+            <span class="profile-detail-label">Real Name</span>
+            <span class="profile-detail-value">${Utils.escapeHtml(realName)}</span>
+          </div>
+          <div class="profile-detail-item">
+            <span class="profile-detail-label">College</span>
+            <span class="profile-detail-value">${Utils.escapeHtml(collegeName)}</span>
+          </div>
+          <div class="profile-detail-item">
+            <span class="profile-detail-label">Department</span>
+            <span class="profile-detail-value">${Utils.escapeHtml(department)}</span>
+          </div>
+          <div class="profile-detail-item">
+            <span class="profile-detail-label">Section / Year</span>
+            <span class="profile-detail-value">${Utils.escapeHtml(section)}</span>
+          </div>
+          <div class="profile-detail-item">
+            <span class="profile-detail-label">Date of Birth</span>
+            <span class="profile-detail-value">${Utils.escapeHtml(dobLabel)}</span>
+          </div>
+          <div class="profile-detail-item">
+            <span class="profile-detail-label">ID Document</span>
+            <span class="profile-detail-value">${Utils.escapeHtml(idDocLabel)}</span>
           </div>
         </div>
       </div>

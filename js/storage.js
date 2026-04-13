@@ -133,48 +133,59 @@ const Storage = {
     this.set('spills', spills); 
   },
 
-  addSpill(spill) {
+  async addSpill(spill) {
     if (window.App && App.isReadOnly && App.isReadOnly()) {
       if (window.Utils && Utils.toast) {
         Utils.toast('Your account is pending verification. You cannot post yet.', 'error');
       }
-      return this.getSpills();
+      return { ok: false, error: 'Your account is pending verification.' };
+    }
+
+    // In live mode, write to cloud first to prevent phantom local posts.
+    if (window.API && API.isLive && API.client) {
+      const collegeObj = this.getColleges().find(c => c.id === spill.collegeId);
+      const cName = collegeObj ? collegeObj.name : 'Unknown College';
+
+      const authId = await API.getCurrentUserId();
+      if (!authId) {
+        return { ok: false, error: 'You must be signed in to post.' };
+      }
+
+      const payload = {
+        spill_id: spill.id,
+        user_id: authId,
+        college_id: spill.collegeId,
+        college_name: cName,
+        department: spill.department || null,
+        section: spill.section || null,
+        category: spill.category,
+        title: spill.title,
+        body: spill.body,
+        alias: spill.alias,
+        alias_emoji: spill.aliasEmoji,
+        self_destruct: spill.selfDestruct || false,
+        reactions: { sip: 0, fire: 0, shook: 0, dead: 0, cap: 0 }
+      };
+
+      const { error } = await API.client.from('spills').insert([payload]);
+      if (error) {
+        console.warn('[Storage] Failed to push spill to Supabase:', error);
+        return {
+          ok: false,
+          error: error.message || 'Cloud write failed',
+          raw: error
+        };
+      }
+
+      // Pull canonical rows from cloud after successful insert.
+      await this.syncSpillsFromCloud();
+      return { ok: true };
     }
 
     const spills = this.getSpills();
     spills.unshift(spill);
     this.saveSpills(spills);
-
-    // [Supabase] Background Sync: Push new spill to cloud
-    if (window.API && API.client) {
-      const collegeObj = this.getColleges().find(c => c.id === spill.collegeId);
-      const cName = collegeObj ? collegeObj.name : 'Unknown College';
-
-      API.getCurrentUserId().then((authId) => {
-        const payload = {
-          spill_id: spill.id,
-          college_id: spill.collegeId,
-          college_name: cName,
-          department: spill.department || null,
-          section: spill.section || null,
-          category: spill.category,
-          title: spill.title,
-          body: spill.body,
-          alias: spill.alias,
-          alias_emoji: spill.aliasEmoji,
-          self_destruct: spill.selfDestruct || false,
-          reactions: { sip: 0, fire: 0, shook: 0, dead: 0, cap: 0 }
-        };
-
-        if (authId) payload.user_id = authId;
-
-        API.client.from('spills').insert([payload]).then(({ error }) => {
-          if (error) console.warn('[Storage] Failed to push spill to Supabase:', error);
-        });
-      });
-    }
-
-    return spills;
+    return { ok: true };
   },
 
   removeSpill(spillId) {
@@ -228,6 +239,20 @@ const Storage = {
 
       // Update local storage explicitly, including the empty state.
       this.saveSpills(cloudSpills);
+
+      // Reconcile local user spill counters with canonical cloud data.
+      const currentAuthId = await API.getCurrentUserId();
+      if (currentAuthId) {
+        const myCloudSpillIds = cloudSpills
+          .filter(s => s.userId === currentAuthId)
+          .map(s => s.id);
+
+        const user = this.getUser();
+        user.mySpillIds = myCloudSpillIds;
+        user.spills = myCloudSpillIds.length;
+        this.saveUser(user, true);
+      }
+
       console.log('[Storage] Live spills synced from Supabase.');
     } catch (e) {
       console.warn('[Storage] Background sync exception:', e);
