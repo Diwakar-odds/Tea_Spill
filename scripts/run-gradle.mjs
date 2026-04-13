@@ -6,10 +6,6 @@ import { spawnSync } from 'node:child_process';
 function findJdk21Home() {
   const candidates = [];
 
-  if (process.env.JAVA_HOME) {
-    candidates.push(process.env.JAVA_HOME);
-  }
-
   const localJdkRoot = path.join(os.homedir(), '.jdk');
   if (fs.existsSync(localJdkRoot)) {
     const entries = fs.readdirSync(localJdkRoot, { withFileTypes: true });
@@ -18,6 +14,10 @@ function findJdk21Home() {
         candidates.push(path.join(localJdkRoot, entry.name));
       }
     }
+  }
+
+  if (process.env.JAVA_HOME) {
+    candidates.push(process.env.JAVA_HOME);
   }
 
   for (const candidate of candidates) {
@@ -62,12 +62,41 @@ if (jdk21Home) {
 }
 
 const gradleCommand = process.platform === 'win32' ? 'gradlew.bat' : './gradlew';
-const result = spawnSync(gradleCommand, [task], {
-  cwd: androidDir,
-  stdio: 'inherit',
-  env,
-  shell: process.platform === 'win32'
-});
+
+function runGradle(args) {
+  return spawnSync(gradleCommand, args, {
+    cwd: androidDir,
+    stdio: 'inherit',
+    env,
+    shell: process.platform === 'win32'
+  });
+}
+
+function cleanupR8LockTargets() {
+  const targets = [
+    path.join(androidDir, 'app', 'build', 'intermediates', 'dex', 'release', 'minifyReleaseWithR8'),
+    path.join(androidDir, 'app', 'build', 'intermediates', 'dex_archive_input_jar_hashes', 'release')
+  ];
+
+  for (const target of targets) {
+    try {
+      fs.rmSync(target, { recursive: true, force: true });
+    } catch (error) {
+      console.warn(`[mobile-build] Could not clean ${target}: ${error.message}`);
+    }
+  }
+}
+
+const isReleaseTask = task.toLowerCase().includes('release');
+const baseArgs = isReleaseTask ? [task, '--no-daemon', '--max-workers=1'] : [task];
+let result = runGradle(baseArgs);
+
+if ((result.status ?? 1) !== 0 && isReleaseTask) {
+  console.warn('[mobile-build] Release build failed. Retrying once with daemon stop + cleanup (Windows file lock recovery).');
+  runGradle(['--stop']);
+  cleanupR8LockTargets();
+  result = runGradle([task, '--no-daemon', '--rerun-tasks', '--max-workers=1']);
+}
 
 if (result.error) {
   console.error(`[mobile-build] Failed to execute Gradle: ${result.error.message}`);

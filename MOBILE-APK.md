@@ -113,6 +113,7 @@ Your landing page already links to this APK path.
 - Keep `.env` configured with `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `GOOGLE_CLIENT_ID` before syncing.
 - If you see `[mobile-config] Warning: One or more runtime variables are empty`, your auth/live backend keys are missing in environment values.
 - APK build scripts prefer JDK 21 automatically (`~/.jdk/jdk-21*`) to avoid Gradle/JDK compatibility errors.
+- Release build script now auto-retries once with Gradle daemon stop + R8 cleanup if Windows file locking interrupts `minifyReleaseWithR8`.
 - If build says SDK not found, install Android SDK from Android Studio and run `npm run mobile:doctor`.
 - Debug APK is fine for testing and quick sharing.
 - For broader public sharing, use a signed release APK.
