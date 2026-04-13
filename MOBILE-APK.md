@@ -34,7 +34,8 @@ What this does:
 
 1. Generates `runtime-config.js` from `.env` values.
 2. Creates a clean `dist-mobile/` web bundle.
-3. Syncs that bundle into `android/`.
+3. Repairs missing/invalid Android launcher icon files if needed.
+4. Syncs the web bundle into `android/`.
 
 Optional hosted mode (loads live website URL inside app):
 
@@ -108,6 +109,7 @@ Your landing page already links to this APK path.
 ## Notes
 
 - Keep `.env` configured with `SUPABASE_URL`, `SUPABASE_ANON_KEY`, and `GOOGLE_CLIENT_ID` before syncing.
+- If you see `[mobile-config] Warning: One or more runtime variables are empty`, your auth/live backend keys are missing in environment values.
 - APK build scripts prefer JDK 21 automatically (`~/.jdk/jdk-21*`) to avoid Gradle/JDK compatibility errors.
 - If build says SDK not found, install Android SDK from Android Studio and run `npm run mobile:doctor`.
 - Debug APK is fine for testing and quick sharing.
