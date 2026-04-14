@@ -17,7 +17,9 @@
     "mobile:open": "npm run mobile:sync && node scripts/run-capacitor.mjs hosted open android",
     "mobile:open:local": "npm run mobile:sync:local && node scripts/run-capacitor.mjs local open android",
     "mobile:apk:debug": "npm run mobile:sync && npm run mobile:doctor && node scripts/run-gradle.mjs assembleDebug",
-    "mobile:apk:release": "npm run mobile:sync && npm run mobile:doctor && node scripts/run-gradle.mjs assembleRelease"
+    "mobile:apk:release": "npm run mobile:sync && npm run mobile:doctor && node scripts/run-gradle.mjs assembleRelease",
+    "mobile:apk:debug:local": "npm run mobile:sync:local && npm run mobile:doctor && node scripts/run-gradle.mjs assembleDebug",
+    "mobile:apk:release:local": "npm run mobile:sync:local && npm run mobile:doctor && node scripts/run-gradle.mjs assembleRelease"
   },
   "repository": {
     "type": "git",

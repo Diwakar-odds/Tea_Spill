@@ -79,13 +79,23 @@ const API = {
     }
 
     const loginScreen = document.getElementById('login-screen');
-    if (loginScreen && typeof google !== 'undefined') {
-      document.getElementById('sidebar').style.display = 'none';
-      document.getElementById('main-content').style.display = 'none';
-      document.getElementById('bottom-nav').style.display = 'none';
-      loginScreen.classList.remove('hidden');
-      loginScreen.classList.add('visible');
+    if (!loginScreen) {
+      console.error('[API] Login screen element not found.');
+      return false;
+    }
 
+    document.getElementById('sidebar').style.display = 'none';
+    document.getElementById('main-content').style.display = 'none';
+    document.getElementById('bottom-nav').style.display = 'none';
+    loginScreen.classList.remove('hidden');
+    loginScreen.classList.add('visible');
+
+    if (
+      typeof google !== 'undefined' &&
+      google.accounts &&
+      google.accounts.id &&
+      typeof google.accounts.id.initialize === 'function'
+    ) {
       google.accounts.id.initialize({
         client_id: this.GOOGLE_CLIENT_ID,
         callback: this._handleGoogleCallback.bind(this)
@@ -97,11 +107,51 @@ const API = {
         shape: 'rectangular',
         text: 'continue_with'
       });
-    } else {
-      console.error('[API] Google Identity script not loaded or login screen missing.');
+
+      return true;
     }
 
-    return false;
+    console.error('[API] Google Identity script not loaded in this WebView runtime.');
+    loginScreen.innerHTML = `
+      <div class="onboarding-card" style="text-align:center; padding: 40px 30px;">
+        <div style="font-size:3rem;margin-bottom:12px">☕</div>
+        <h1 style="font-size:1.4rem;font-weight:900;margin-bottom:10px;background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Join the Tea Spill</h1>
+        <p style="color:var(--text-tertiary);font-size:0.9rem;margin-bottom:20px;">Using fallback sign-in mode for mobile app.</p>
+        <button id="oauth-google-fallback" class="btn btn-primary btn-glow" style="padding: 12px 18px; width: 100%;">Continue with Google</button>
+      </div>
+    `;
+
+    const fallbackBtn = document.getElementById('oauth-google-fallback');
+    if (fallbackBtn) {
+      fallbackBtn.addEventListener('click', async () => {
+        fallbackBtn.disabled = true;
+        fallbackBtn.textContent = 'Redirecting...';
+
+        try {
+          if (!this.client) throw new Error('Supabase client not initialized');
+          const redirectTo = `${window.location.origin}/app.html`;
+          const { data, error } = await this.client.auth.signInWithOAuth({
+            provider: 'google',
+            options: {
+              redirectTo,
+              skipBrowserRedirect: true
+            }
+          });
+
+          if (error) throw error;
+          if (!data || !data.url) throw new Error('Missing OAuth redirect URL');
+
+          window.location.href = data.url;
+        } catch (error) {
+          console.error('[API] OAuth fallback login failed:', error);
+          fallbackBtn.disabled = false;
+          fallbackBtn.textContent = 'Continue with Google';
+          alert('Failed to open Google sign-in. Please check internet and try again.');
+        }
+      });
+    }
+
+    return true;
   },
 
   async _handleGoogleCallback(response) {
@@ -524,23 +574,77 @@ const API = {
     const ref = String(idReference).trim();
     if (!ref) return null;
 
+    if (!this.isLive || !this.client) return null;
+
+    const candidatePaths = [];
+    const addCandidate = (value) => {
+      if (!value) return;
+      const cleaned = String(value).replace(/^\/+/, '').trim();
+      if (!cleaned) return;
+      candidatePaths.push(cleaned);
+
+      if (cleaned.startsWith('verification_ids/')) {
+        const withoutBucketPrefix = cleaned.slice('verification_ids/'.length);
+        if (withoutBucketPrefix) candidatePaths.push(withoutBucketPrefix);
+      } else {
+        candidatePaths.push(`verification_ids/${cleaned}`);
+      }
+    };
+
     if (/^https?:\/\//i.test(ref)) {
-      // Legacy records may still contain historical public URLs.
+      try {
+        const parsed = new URL(ref);
+        const path = decodeURIComponent(parsed.pathname || '');
+
+        const netlifyMatch = path.match(/\/verification_ids\/(.+)$/i);
+        if (netlifyMatch && netlifyMatch[1]) {
+          addCandidate(`verification_ids/${netlifyMatch[1]}`);
+        }
+
+        const storagePublicMatch = path.match(/\/storage\/v1\/object\/public\/verification_ids\/(.+)$/i);
+        if (storagePublicMatch && storagePublicMatch[1]) {
+          addCandidate(storagePublicMatch[1]);
+        }
+
+        const storageSignMatch = path.match(/\/storage\/v1\/object\/sign\/verification_ids\/(.+)$/i);
+        if (storageSignMatch && storageSignMatch[1]) {
+          addCandidate(storageSignMatch[1]);
+        }
+      } catch (error) {
+        console.warn('[API] Could not parse legacy verification URL:', error);
+      }
+    } else {
+      addCandidate(ref);
+    }
+
+    const tried = new Set();
+    for (const objectPath of candidatePaths) {
+      if (!objectPath || tried.has(objectPath)) continue;
+      tried.add(objectPath);
+
+      const { data, error } = await this.client.storage
+        .from('verification_ids')
+        .createSignedUrl(objectPath, expiresIn);
+
+      if (!error && data && data.signedUrl) {
+        return data.signedUrl;
+      }
+    }
+
+    for (const objectPath of tried) {
+      const { data } = this.client.storage.from('verification_ids').getPublicUrl(objectPath);
+      if (data && data.publicUrl) {
+        return data.publicUrl;
+      }
+    }
+
+    if (/^https?:\/\//i.test(ref)) {
+      // Last resort for truly legacy public links.
       return ref;
     }
 
-    if (!this.isLive || !this.client) return null;
-
-    const { data, error } = await this.client.storage
-      .from('verification_ids')
-      .createSignedUrl(ref, expiresIn);
-
-    if (error) {
-      console.error('[API] Failed to sign verification URL:', error);
-      return null;
-    }
-
-    return data && data.signedUrl ? data.signedUrl : null;
+    console.error('[API] Failed to sign verification URL. Reference:', ref);
+    return null;
   },
 
   async fetchComments(spillId) {

@@ -32,67 +32,80 @@ const App = {
 
     // Splash screen → then decide: onboarding or straight to app
     setTimeout(async () => {
-      const splash = document.getElementById('splash-screen');
-      if (splash) splash.classList.add('hidden');
+      try {
+        const splash = document.getElementById('splash-screen');
+        if (splash) splash.classList.add('hidden');
 
-      const session = await API.getUserSession();
-      if (!session) {
-        // User isn't logged in, redirect them specifically to Google Auth
-        await API.signInWithGoogle();
-        return;
-      }
-      this.session = session;
-      if (window.API && typeof API.setSession === 'function') {
-        API.setSession(session);
-      }
-
-      // Cross-Platform Sync: Clone Cloud Profile to Local Device Memory
-      if (session.user.user_metadata && session.user.user_metadata.tea_profile) {
-        const mergedProfile = {
-          ...Storage.getUser(),
-          ...session.user.user_metadata.tea_profile
-        };
-        Storage.saveUser(mergedProfile, true);
-      }
-
-      // Ensure a canonical DB profile exists and align local alias/profile fields.
-      const dbProfile = await API.getOrCreateUserProfile(session.user.id);
-      if (dbProfile) {
-        const mergedLocal = { ...Storage.getUser() };
-        if (dbProfile.username) mergedLocal.alias = dbProfile.username;
-        if (dbProfile.college_name) mergedLocal.collegeName = dbProfile.college_name;
-        if (dbProfile.department) mergedLocal.department = dbProfile.department;
-        Storage.saveUser(mergedLocal, true);
-      }
-
-      // Pre-fetch live community content before unveiling the app
-      await Storage.syncSpillsFromCloud();
-
-      const verif = await API.checkVerificationStatus(session.user.id);
-      this.isAdmin = verif.isAdmin;
-
-      if (this.isAdmin) {
-        document.getElementById('admin-nav-item').style.display = 'block';
-      }
-
-      if (verif.status === 'banned') {
-        document.body.innerHTML = `
-          <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#000; color:#ff4444; text-align:center; padding:20px;">
-            <div style="font-size:4rem; margin-bottom:20px;">🚫</div>
-            <h1 style="font-size:2rem; margin-bottom:10px;">ACCESS DENIED</h1>
-            <p style="color:#aaa; font-size:1.1rem; max-width:400px; line-height:1.5;">Your account has been permanently suspended for violating community guidelines.</p>
-          </div>
-        `;
-        return;
-      }
-
-      if (verif.status === 'unverified') {
-        this._showOnboarding();
-      } else {
-        if (typeof Utils !== 'undefined' && Utils.toast) {
-          Utils.toast('Welcome back! Automatically signed in.', 'success');
+        const session = await API.getUserSession();
+        if (!session) {
+          // User isn't logged in, redirect them specifically to Google Auth
+          const googleLoginReady = await API.signInWithGoogle();
+          if (!googleLoginReady) {
+            console.warn('[App] Google sign-in unavailable. Entering read-only mode to avoid blank screen.');
+            this._enterApp('pending');
+            if (typeof Utils !== 'undefined' && Utils.toast) {
+              Utils.toast('Google sign-in is temporarily unavailable in app. Running in read-only mode.', 'error');
+            }
+          }
+          return;
         }
-        this._enterApp(verif.status);
+        this.session = session;
+        if (window.API && typeof API.setSession === 'function') {
+          API.setSession(session);
+        }
+
+        // Cross-Platform Sync: Clone Cloud Profile to Local Device Memory
+        if (session.user && session.user.user_metadata && session.user.user_metadata.tea_profile) {
+          const mergedProfile = {
+            ...Storage.getUser(),
+            ...session.user.user_metadata.tea_profile
+          };
+          Storage.saveUser(mergedProfile, true);
+        }
+
+        // Ensure a canonical DB profile exists and align local alias/profile fields.
+        const dbProfile = await API.getOrCreateUserProfile(session.user.id);
+        if (dbProfile) {
+          const mergedLocal = { ...Storage.getUser() };
+          if (dbProfile.username) mergedLocal.alias = dbProfile.username;
+          if (dbProfile.college_name) mergedLocal.collegeName = dbProfile.college_name;
+          if (dbProfile.department) mergedLocal.department = dbProfile.department;
+          Storage.saveUser(mergedLocal, true);
+        }
+
+        // Start sync in background so first screen cannot be blocked by network stalls.
+        this._syncSpillsFromCloudWithTimeout();
+
+        const verif = await API.checkVerificationStatus(session.user.id);
+        this.isAdmin = !!(verif && verif.isAdmin);
+
+        if (this.isAdmin) {
+          const adminNav = document.getElementById('admin-nav-item');
+          if (adminNav) adminNav.style.display = 'block';
+        }
+
+        if (verif && verif.status === 'banned') {
+          document.body.innerHTML = `
+            <div style="height:100vh; display:flex; flex-direction:column; align-items:center; justify-content:center; background:#000; color:#ff4444; text-align:center; padding:20px;">
+              <div style="font-size:4rem; margin-bottom:20px;">🚫</div>
+              <h1 style="font-size:2rem; margin-bottom:10px;">ACCESS DENIED</h1>
+              <p style="color:#aaa; font-size:1.1rem; max-width:400px; line-height:1.5;">Your account has been permanently suspended for violating community guidelines.</p>
+            </div>
+          `;
+          return;
+        }
+
+        if (verif && verif.status === 'unverified') {
+          this._showOnboarding();
+        } else {
+          if (typeof Utils !== 'undefined' && Utils.toast) {
+            Utils.toast('Welcome back! Automatically signed in.', 'success');
+          }
+          this._enterApp(verif && verif.status ? verif.status : 'verified');
+        }
+      } catch (error) {
+        console.error('[App] Bootstrap error:', error);
+        this._enterApp('verified');
       }
     }, 1800);
   },
@@ -233,11 +246,12 @@ const App = {
     }
     Storage.saveUser(user);
 
-    // Initial background sync from PocketBase
-    await Storage.syncSpillsFromCloud();
-
     // Initialize spill module
-    Spill.init();
+    try {
+      Spill.init();
+    } catch (error) {
+      console.error('[App] Spill init failed:', error);
+    }
     this._updateSidebarProfile();
     this._bindNavigation();
 
@@ -256,10 +270,61 @@ const App = {
     }
 
     // Default page
-    this.navigate('feed');
+    try {
+      this.navigate('feed');
+    } catch (error) {
+      console.error('[App] Feed navigation failed:', error);
+      this._renderEmergencyFeed();
+    }
+
+    // Sync in background; re-render feed once fresh data arrives.
+    this._syncSpillsFromCloudWithTimeout().then((didSync) => {
+      if (!didSync) return;
+      if (this.currentPage === 'feed' && typeof Feed !== 'undefined' && Feed.render) {
+        Feed.render();
+      }
+    });
 
     // Keep community feed fresh across devices while app is open.
     this._startLiveSyncLoop();
+  },
+
+  async _syncSpillsFromCloudWithTimeout(timeoutMs = 4000) {
+    if (!window.Storage || typeof Storage.syncSpillsFromCloud !== 'function') return false;
+
+    let timeoutId = null;
+    const timeoutPromise = new Promise((resolve) => {
+      timeoutId = setTimeout(() => resolve(false), timeoutMs);
+    });
+
+    const syncPromise = (async () => {
+      try {
+        await Storage.syncSpillsFromCloud();
+        return true;
+      } catch (error) {
+        console.warn('[App] Cloud sync failed:', error);
+        return false;
+      } finally {
+        if (timeoutId) clearTimeout(timeoutId);
+      }
+    })();
+
+    return Promise.race([syncPromise, timeoutPromise]);
+  },
+
+  _renderEmergencyFeed() {
+    const feedPage = document.getElementById('page-feed');
+    if (!feedPage) return;
+
+    feedPage.innerHTML = `
+      <div class="empty-state" style="margin-top:20px;">
+        <div class="empty-state-icon">☕</div>
+        <div class="empty-state-title">Feed is starting</div>
+        <div class="empty-state-text">Please reopen the app if content does not appear in a few seconds.</div>
+      </div>
+    `;
+    this._showPage('feed');
+    this._setActiveNav('feed');
   },
 
   async _tryHybridHostedTakeover() {
