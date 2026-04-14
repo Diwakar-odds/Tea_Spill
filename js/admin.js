@@ -16,14 +16,30 @@ const Admin = {
   async _attachSignedIdUrls(users) {
     if (!Array.isArray(users) || users.length === 0) return [];
 
+    const brokenNetlifyPattern = /^https?:\/\/[^/]*spill-wise\.netlify\.app\/verification_ids\/(.+)$/i;
+
     const signed = await Promise.all(
       users.map(async (user) => {
         let idUrl = null;
         if (window.API && typeof API.resolveVerificationUrl === 'function') {
           idUrl = await API.resolveVerificationUrl(user.id_url, 3600);
+
+          // If any legacy/broken Netlify path slips through, retry once using object key only.
+          if (typeof idUrl === 'string') {
+            const match = idUrl.match(brokenNetlifyPattern);
+            if (match && match[1]) {
+              idUrl = await API.resolveVerificationUrl(match[1], 3600);
+            }
+          }
         } else {
-          idUrl = user.id_url || null;
+          idUrl = null;
         }
+
+        if (typeof idUrl === 'string' && brokenNetlifyPattern.test(idUrl)) {
+          // Never expose broken static-site paths in admin preview links.
+          idUrl = null;
+        }
+
         return { ...user, signed_id_url: idUrl };
       })
     );
@@ -186,8 +202,11 @@ const Admin = {
             const safeDob = this._safe(user.dob || '—');
             const authId = String(user.auth_id || '').replace(/'/g, "\\'");
 
-            const hasSignedUrl = !!user.signed_id_url;
-            const safeSignedUrl = hasSignedUrl ? Utils.escapeHtml(String(user.signed_id_url)) : '';
+            const resolvedUrl = String(user.signed_id_url || '').trim();
+            const hasSignedUrl =
+              /^https?:\/\//i.test(resolvedUrl) &&
+              !/^https?:\/\/[^/]*spill-wise\.netlify\.app\/verification_ids\//i.test(resolvedUrl);
+            const safeSignedUrl = hasSignedUrl ? Utils.escapeHtml(resolvedUrl) : '';
             const rawIdReference = this._safe(user.id_url || '—');
 
             return `
