@@ -581,12 +581,12 @@ const API = {
       if (!value) return;
       const cleaned = String(value).replace(/^\/+/, '').trim();
       if (!cleaned) return;
-      candidatePaths.push(cleaned);
-
       if (cleaned.startsWith('verification_ids/')) {
         const withoutBucketPrefix = cleaned.slice('verification_ids/'.length);
         if (withoutBucketPrefix) candidatePaths.push(withoutBucketPrefix);
+        candidatePaths.push(cleaned);
       } else {
+        candidatePaths.push(cleaned);
         candidatePaths.push(`verification_ids/${cleaned}`);
       }
     };
@@ -598,7 +598,8 @@ const API = {
 
         const netlifyMatch = path.match(/\/verification_ids\/(.+)$/i);
         if (netlifyMatch && netlifyMatch[1]) {
-          addCandidate(`verification_ids/${netlifyMatch[1]}`);
+          // Legacy Netlify links usually map to plain object keys.
+          addCandidate(netlifyMatch[1]);
         }
 
         const storagePublicMatch = path.match(/\/storage\/v1\/object\/public\/verification_ids\/(.+)$/i);
@@ -636,11 +637,6 @@ const API = {
       if (data && data.publicUrl) {
         return data.publicUrl;
       }
-    }
-
-    if (/^https?:\/\//i.test(ref)) {
-      // Last resort for truly legacy public links.
-      return ref;
     }
 
     console.error('[API] Failed to sign verification URL. Reference:', ref);

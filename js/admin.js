@@ -20,7 +20,7 @@ const Admin = {
       users.map(async (user) => {
         let idUrl = null;
         if (window.API && typeof API.resolveVerificationUrl === 'function') {
-          idUrl = await API.resolveVerificationUrl(user.id_url);
+          idUrl = await API.resolveVerificationUrl(user.id_url, 3600);
         } else {
           idUrl = user.id_url || null;
         }
@@ -188,6 +188,7 @@ const Admin = {
 
             const hasSignedUrl = !!user.signed_id_url;
             const safeSignedUrl = hasSignedUrl ? Utils.escapeHtml(String(user.signed_id_url)) : '';
+            const rawIdReference = this._safe(user.id_url || '—');
 
             return `
             <div class="admin-card" style="background:var(--bg-card); border:1px solid var(--border-default); border-radius:var(--radius-lg); overflow:hidden;">
@@ -201,7 +202,10 @@ const Admin = {
               </a>
               ` : `
               <div style="height:180px; border-bottom:1px solid var(--border-subtle); display:flex; align-items:center; justify-content:center; color:var(--text-tertiary); background:#111;">
-                No ID preview available
+                <div style="text-align:center; padding: 10px 14px; font-size:12px; line-height:1.4;">
+                  <div style="margin-bottom:6px; color:var(--text-secondary);">No ID preview available</div>
+                  <div style="word-break:break-all; color:var(--text-muted);">${rawIdReference}</div>
+                </div>
               </div>
               `}
 
