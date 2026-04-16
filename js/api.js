@@ -60,10 +60,9 @@ const API = {
 
   async signInWithGoogle() {
     if (!this.isLive) {
-      // Local development fallback
-      localStorage.setItem('teaspill_sb_auth', JSON.stringify({ userId: 'local_dev_user', email: 'dev@student.edu' }));
-      window.location.reload();
-      return true;
+      console.error('[API] Cannot sign in without Supabase connection. Missing runtime keys or blocked network.');
+      alert('Unable to connect to the cloud. Please check your internet connection or app configuration.');
+      return false;
     }
 
     if (!this.GOOGLE_CLIENT_ID) {
@@ -155,18 +154,34 @@ const API = {
     this.setSession(null);
     if (!this.isLive) {
       localStorage.removeItem('teaspill_sb_auth');
-      window.location.href = 'index.html';
+      window.location.href = 'app.html';
       return;
     }
-    await this.client.auth.signOut();
-    window.location.href = 'index.html';
+    
+    // Attempt standard signout, but ignore errors if session is already invalid
+    try {
+      await this.client.auth.signOut();
+    } catch (e) {
+      console.warn('[API] Signout error ignored:', e);
+    }
+    
+    // Must clear local storage so localStorage caching doesn't restore on reload
+    if (typeof localStorage !== 'undefined') {
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && key.startsWith('sb-')) {
+          localStorage.removeItem(key);
+        }
+      }
+    }
+    
+    window.location.href = 'app.html';
   },
 
   async getUserSession() {
     if (!this.isLive) {
-      return localStorage.getItem('teaspill_sb_auth')
-        ? { user: { id: 'local_dev_user', email: 'dev@student.edu' } }
-        : null;
+      console.warn('[API] App is running without cloud connection.');
+      return null;
     }
 
     const {
@@ -184,7 +199,7 @@ const API = {
   },
 
   async getCurrentUserId() {
-    if (!this.isLive) return 'local_dev_user';
+    if (!this.isLive) return null;
     if (this.session && this.session.user && this.session.user.id) return this.session.user.id;
 
     const { data, error } = await this.client.auth.getUser();
