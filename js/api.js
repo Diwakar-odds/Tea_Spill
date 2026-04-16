@@ -61,13 +61,7 @@ const API = {
   async signInWithGoogle() {
     if (!this.isLive) {
       // Local development fallback
-      localStorage.setItem(
-        'teaspill_sb_auth',
-        JSON.stringify({
-          userId: 'local_dev_user',
-          email: 'dev@student.edu'
-        })
-      );
+      localStorage.setItem('teaspill_sb_auth', JSON.stringify({ userId: 'local_dev_user', email: 'dev@student.edu' }));
       window.location.reload();
       return true;
     }
@@ -79,10 +73,7 @@ const API = {
     }
 
     const loginScreen = document.getElementById('login-screen');
-    if (!loginScreen) {
-      console.error('[API] Login screen element not found.');
-      return false;
-    }
+    if (!loginScreen) return false;
 
     document.getElementById('sidebar').style.display = 'none';
     document.getElementById('main-content').style.display = 'none';
@@ -90,63 +81,46 @@ const API = {
     loginScreen.classList.remove('hidden');
     loginScreen.classList.add('visible');
 
-    if (
-      typeof google !== 'undefined' &&
-      google.accounts &&
-      google.accounts.id &&
-      typeof google.accounts.id.initialize === 'function'
-    ) {
-      google.accounts.id.initialize({
-        client_id: this.GOOGLE_CLIENT_ID,
-        callback: this._handleGoogleCallback.bind(this)
-      });
-
-      google.accounts.id.renderButton(document.getElementById('google-btn-container'), {
-        theme: 'filled_black',
-        size: 'large',
-        shape: 'rectangular',
-        text: 'continue_with'
-      });
-
-      return true;
-    }
-
-    console.error('[API] Google Identity script not loaded in this WebView runtime.');
+    // Render a universal Google sign-in button using Supabase OAuth
+    // This avoids popup blockers and Capacitor WebView issues common with Google Identity Services
     loginScreen.innerHTML = `
       <div class="onboarding-card" style="text-align:center; padding: 40px 30px;">
         <div style="font-size:3rem;margin-bottom:12px">☕</div>
         <h1 style="font-size:1.4rem;font-weight:900;margin-bottom:10px;background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Join the Tea Spill</h1>
-        <p style="color:var(--text-tertiary);font-size:0.9rem;margin-bottom:20px;">Using fallback sign-in mode for mobile app.</p>
-        <button id="oauth-google-fallback" class="btn btn-primary btn-glow" style="padding: 12px 18px; width: 100%;">Continue with Google</button>
+        <p style="color:var(--text-tertiary);font-size:0.9rem;margin-bottom:20px;">Use your student email to sign in.</p>
+        <button id="oauth-google-btn" class="btn btn-primary btn-glow" style="padding: 12px 18px; width: 100%; border-radius: 20px; font-weight: 700;">
+          <svg style="width: 20px; height: 20px; margin-right: 8px; vertical-align: middle;" viewBox="0 0 24 24"><path fill="#fff" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="#fff" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="#fff" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="#fff" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+          Continue with Google
+        </button>
       </div>
     `;
 
-    const fallbackBtn = document.getElementById('oauth-google-fallback');
-    if (fallbackBtn) {
-      fallbackBtn.addEventListener('click', async () => {
-        fallbackBtn.disabled = true;
-        fallbackBtn.textContent = 'Redirecting...';
+    const oauthBtn = document.getElementById('oauth-google-btn');
+    if (oauthBtn) {
+      oauthBtn.addEventListener('click', async () => {
+        oauthBtn.disabled = true;
+        oauthBtn.innerHTML = 'Connecting... ☕';
 
         try {
           if (!this.client) throw new Error('Supabase client not initialized');
-          const redirectTo = `${window.location.origin}/app.html`;
+          
+          // Use origin so redirect handles dev vs prod cleanly
+          // Append ?redirected=1 to track if we want (optional)
+          const redirectTo = \`\${window.location.origin}/app.html\`;
           const { data, error } = await this.client.auth.signInWithOAuth({
             provider: 'google',
             options: {
               redirectTo,
-              skipBrowserRedirect: true
+              skipBrowserRedirect: false // Important! We WANT to redirect the webview so it doesn't try a popup
             }
           });
 
           if (error) throw error;
-          if (!data || !data.url) throw new Error('Missing OAuth redirect URL');
-
-          window.location.href = data.url;
         } catch (error) {
-          console.error('[API] OAuth fallback login failed:', error);
-          fallbackBtn.disabled = false;
-          fallbackBtn.textContent = 'Continue with Google';
-          alert('Failed to open Google sign-in. Please check internet and try again.');
+          console.error('[API] OAuth login failed:', error);
+          oauthBtn.disabled = false;
+          oauthBtn.innerHTML = 'Continue with Google';
+          alert('Failed to connect to Google. Please check your internet connection.');
         }
       });
     }

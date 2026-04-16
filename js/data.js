@@ -564,15 +564,261 @@ function buildMockSpills() {
   return all;
 }
 
+const COMMUNITY_ITEMS_PER_CONTAINER = 20;
+const CHANNEL_BROADCASTS_PER_CHANNEL = 20;
+
+// Internet-inspired Gen Z trend topics used in seeded community content.
+// Sources: recurring themes from social trends coverage (short-form video,
+// creator authenticity, AI tools, sustainability, side hustles, etc.).
+const GENZ_TRENDING_TOPICS = [
+  { id: 'short-form-content', label: 'Short-form video edits', focus: 'fast visual storytelling on reels, clips, and shorts' },
+  { id: 'creator-authenticity', label: 'Creator authenticity checks', focus: 'transparent takes and no-filter opinions from creators' },
+  { id: 'ai-tool-hacks', label: 'AI tool hacks', focus: 'using AI assistants for study, work, and daily productivity' },
+  { id: 'digital-detox', label: 'Digital detox windows', focus: 'intentional breaks from doom-scrolling and notification fatigue' },
+  { id: 'micro-communities', label: 'Micro-community circles', focus: 'tight private chat groups and niche online communities' },
+  { id: 'meme-remix', label: 'Meme remix culture', focus: 'rapid meme remixes, reaction formats, and running inside jokes' },
+  { id: 'thrift-upcycle', label: 'Thrift and upcycle style', focus: 'resale fashion, upcycling, and low-waste outfit trends' },
+  { id: 'sustainability-receipts', label: 'Sustainability receipts', focus: 'calling out greenwashing and sharing practical eco habits' },
+  { id: 'side-hustles', label: 'Side hustle diaries', focus: 'small creator-led income experiments and freelance gigs' },
+  { id: 'situationship-stories', label: 'Situationship storytelling', focus: 'relationship confusion stories told through anonymous tea posts' },
+  { id: 'mental-health-checkins', label: 'Mental health check-ins', focus: 'open conversations around stress, burnout, and soft boundaries' },
+  { id: 'social-commerce', label: 'Social commerce drops', focus: 'shopping through creator recommendations and short-form demos' }
+];
+
+const PAGE_BLUEPRINTS = [
+  { id: 'page-ai-masala-lab', name: 'AI Masala Lab', icon: '🤖', tech: true, topicId: 'ai-tool-hacks', desc: 'Anonymous tea on prompts, bots, and workflow hacks.' },
+  { id: 'page-code-chaos-board', name: 'Code Chaos Board', icon: '💻', tech: true, topicId: 'micro-communities', desc: 'Debug stories, launch panic, and tech team gossips.' },
+  { id: 'page-creator-tea-radar', name: 'Creator Tea Radar', icon: '🎬', tech: false, topicId: 'creator-authenticity', desc: 'Trend drama, creator receipts, and audience reactions.' },
+  { id: 'page-meme-economics', name: 'Meme Economics', icon: '😂', tech: false, topicId: 'meme-remix', desc: 'Where every chaotic update becomes meme material.' },
+  { id: 'page-side-hustle-signals', name: 'Side Hustle Signals', icon: '💸', tech: false, topicId: 'side-hustles', desc: 'Freelance wins, payment fails, and hustle lessons.' },
+  { id: 'page-thrift-flip-diaries', name: 'Thrift Flip Diaries', icon: '♻️', tech: false, topicId: 'thrift-upcycle', desc: 'Resale finds, upcycle hacks, and fit-check tea.' },
+  { id: 'page-situationship-central', name: 'Situationship Central', icon: '💘', tech: false, topicId: 'situationship-stories', desc: 'Anonymous relationship chaos and confession drops.' },
+  { id: 'page-soft-life-reset', name: 'Soft Life Reset', icon: '🌿', tech: false, topicId: 'mental-health-checkins', desc: 'Burnout recovery, healthy boundaries, and calm routines.' },
+  { id: 'page-digital-detox-club', name: 'Digital Detox Club', icon: '📵', tech: false, topicId: 'digital-detox', desc: 'Offline experiments and screen-time reality checks.' },
+  { id: 'page-short-loop-trends', name: 'Short Loop Trends', icon: '📱', tech: false, topicId: 'short-form-content', desc: 'Viral formats, sound loops, and trend cycle tea.' }
+];
+
+const GROUP_BLUEPRINTS = [
+  { id: 'group-dev-night-owls', name: 'Dev Night Owls', icon: '🛠️', tech: true, topicId: 'ai-tool-hacks', type: 'public', desc: 'Late-night debugging confessions and release-night tea.' },
+  { id: 'group-ai-toolbox-lounge', name: 'AI Toolbox Lounge', icon: '🧠', tech: true, topicId: 'ai-tool-hacks', type: 'private', desc: 'Prompt tricks, automation experiments, and AI fails.' },
+  { id: 'group-reels-reaction-room', name: 'Reels Reaction Room', icon: '🎞️', tech: false, topicId: 'short-form-content', type: 'public', desc: 'Realtime reactions to short-form trends and edits.' },
+  { id: 'group-sidequest-syndicate', name: 'Sidequest Syndicate', icon: '🎯', tech: false, topicId: 'side-hustles', type: 'private', desc: 'Anonymous side hustle wins, flops, and ideas.' },
+  { id: 'group-meme-forensics', name: 'Meme Forensics', icon: '🕵️', tech: false, topicId: 'meme-remix', type: 'public', desc: 'Who started the meme and why it exploded.' },
+  { id: 'group-thrift-upcycle-squad', name: 'Thrift Upcycle Squad', icon: '🧵', tech: false, topicId: 'thrift-upcycle', type: 'public', desc: 'Upcycle hacks and chaos from style experiments.' },
+  { id: 'group-detox-checkin-room', name: 'Detox Check-In Room', icon: '🧘', tech: false, topicId: 'digital-detox', type: 'private', desc: 'Digital reset logs and no-phone challenge updates.' },
+  { id: 'group-green-receipts', name: 'Green Receipts', icon: '🌍', tech: false, topicId: 'sustainability-receipts', type: 'public', desc: 'Sustainability claims, fact checks, and practical eco tips.' },
+  { id: 'group-soft-boundary-circle', name: 'Soft Boundary Circle', icon: '💚', tech: false, topicId: 'mental-health-checkins', type: 'private', desc: 'Stress vents, burnout stories, and supportive tea.' },
+  { id: 'group-secret-chaos-cabinet', name: 'Secret Chaos Cabinet', icon: '🔒', tech: false, topicId: 'micro-communities', type: 'secret', desc: 'Invite-only anonymous chaos archive.' }
+];
+
+const CHANNEL_BLUEPRINTS = [
+  { id: 'channel-tech-spillwire', name: 'Tech Spillwire', icon: '📡', tech: true, topicId: 'ai-tool-hacks', desc: 'Broadcast alerts on tech drama and product chaos.' },
+  { id: 'channel-code-red-alerts', name: 'Code Red Alerts', icon: '🚨', tech: true, topicId: 'micro-communities', desc: 'Shipping incidents, bug stories, and deadline tea.' },
+  { id: 'channel-creator-algorithm-watch', name: 'Creator Algorithm Watch', icon: '📊', tech: false, topicId: 'creator-authenticity', desc: 'Creator trend shifts and audience sentiment snapshots.' },
+  { id: 'channel-short-loop-bulletin', name: 'Short Loop Bulletin', icon: '🌀', tech: false, topicId: 'short-form-content', desc: 'Daily pulse on short-form viral content waves.' },
+  { id: 'channel-meme-news-desk', name: 'Meme News Desk', icon: '🗞️', tech: false, topicId: 'meme-remix', desc: 'Breaking meme formats and reaction trend updates.' },
+  { id: 'channel-side-hustle-feed', name: 'Side Hustle Feed', icon: '💼', tech: false, topicId: 'side-hustles', desc: 'Freelance tea, hustle playbooks, and quick lessons.' },
+  { id: 'channel-thrift-radar', name: 'Thrift Radar', icon: '🛍️', tech: false, topicId: 'thrift-upcycle', desc: 'Resale spikes, style flips, and closet hacks.' },
+  { id: 'channel-detox-pulse', name: 'Detox Pulse', icon: '🌙', tech: false, topicId: 'digital-detox', desc: 'Screen-time reset motivation and offline challenge notes.' },
+  { id: 'channel-soft-checkins', name: 'Soft Check-Ins', icon: '🫶', tech: false, topicId: 'mental-health-checkins', desc: 'Mental wellness prompts and calm routine tea.' },
+  { id: 'channel-social-commerce-signal', name: 'Social Commerce Signal', icon: '🛒', tech: false, topicId: 'social-commerce', desc: 'Creator-led shopping trends and trust-signal watch.' }
+];
+
+const COMMUNITY_STORY_LINES = [
+  'A harmless incident escalated into full group-chat speculation within minutes',
+  'An old ex mention triggered a chain of jokes and awkward silence',
+  'A terrible misunderstanding became a funny lesson after context dropped',
+  'A workplace and campus crossover story turned into peak masala',
+  'A tiny typo became the most discussed update of the day',
+  'An anonymous rant unexpectedly helped others feel less alone'
+];
+
+const CHANNEL_BROADCAST_HEADLINES = [
+  'Trend Pulse',
+  'Hot Topic Alert',
+  'Masala Watch',
+  'Community Signal',
+  'Daily Spill Brief',
+  'Viral Topic Check'
+];
+
+function resolveTrendTopic(topicId, seed) {
+  return GENZ_TRENDING_TOPICS.find(t => t.id === topicId) || seededPick(GENZ_TRENDING_TOPICS, seed);
+}
+
+function buildMockPages() {
+  return PAGE_BLUEPRINTS.map((blueprint, index) => {
+    const seed = 200000 + index * 67;
+    const topic = resolveTrendTopic(blueprint.topicId, seed + 1);
+
+    return {
+      id: blueprint.id,
+      name: blueprint.name,
+      desc: `${blueprint.desc} Trending topic: ${topic.label.toLowerCase()}.`,
+      icon: blueprint.icon,
+      followers: seededInt(seed + 2, 2800, 98000),
+      posts: COMMUNITY_ITEMS_PER_CONTAINER,
+      tags: [topic.id, blueprint.tech ? 'tech' : 'culture']
+    };
+  });
+}
+
+function buildGroupMessages(group, groupIndex) {
+  const messages = [];
+
+  for (let i = 0; i < 6; i++) {
+    const seed = 260000 + groupIndex * 90 + i;
+    const topic = resolveTrendTopic(group.topicId, seed + 1);
+    messages.push({
+      alias: `Anon${seededInt(seed + 2, 100, 999)}`,
+      emoji: seededPick(ALIAS_EMOJIS, seed + 3),
+      body: `${seededPick(COMMUNITY_STORY_LINES, seed + 4)} around ${topic.label.toLowerCase()}.`,
+      time: buildTimeAgo(seed + 5)
+    });
+  }
+
+  return messages;
+}
+
+function buildMockGroups() {
+  return GROUP_BLUEPRINTS.map((blueprint, index) => {
+    const seed = 300000 + index * 73;
+    const topic = resolveTrendTopic(blueprint.topicId, seed + 1);
+
+    return {
+      id: blueprint.id,
+      name: blueprint.name,
+      desc: `${blueprint.desc} Theme: ${topic.label.toLowerCase()}.`,
+      icon: blueprint.icon,
+      type: blueprint.type,
+      members: seededInt(seed + 2, 900, 32000),
+      messages: buildGroupMessages(blueprint, index),
+      tags: [topic.id, blueprint.tech ? 'tech' : 'community']
+    };
+  });
+}
+
+function buildChannelBroadcast(channel, channelIndex, broadcastIndex) {
+  const seed = 360000 + channelIndex * 160 + broadcastIndex;
+  const topic = resolveTrendTopic(channel.topicId, seed + 1);
+
+  return {
+    title: `${seededPick(CHANNEL_BROADCAST_HEADLINES, seed + 2)}: ${topic.label}`,
+    body: [
+      `${topic.focus}.`,
+      `${seededPick(COMMUNITY_STORY_LINES, seed + 3)}.`,
+      `Fake reference: ${seededPick(MOCK_FAKE_REFERENCES, seed + 4)}.`,
+      'Mock broadcast notice: fictional, anonymized seed content only.'
+    ].join(' '),
+    time: buildTimeAgo(seed + 5)
+  };
+}
+
+function buildChannelBroadcasts(channel, channelIndex) {
+  const broadcasts = [];
+
+  for (let i = 0; i < CHANNEL_BROADCASTS_PER_CHANNEL; i++) {
+    broadcasts.push(buildChannelBroadcast(channel, channelIndex, i));
+  }
+
+  return broadcasts;
+}
+
+function buildMockChannels() {
+  return CHANNEL_BLUEPRINTS.map((blueprint, index) => {
+    const seed = 420000 + index * 83;
+    const topic = resolveTrendTopic(blueprint.topicId, seed + 1);
+
+    return {
+      id: blueprint.id,
+      name: blueprint.name,
+      desc: `${blueprint.desc} Focus: ${topic.label.toLowerCase()}.`,
+      icon: blueprint.icon,
+      subscribers: seededInt(seed + 2, 1800, 76000),
+      broadcasts: buildChannelBroadcasts(blueprint, index),
+      tags: [topic.id, blueprint.tech ? 'tech' : 'signal']
+    };
+  });
+}
+
+function buildCommunitySpill(containerType, community, containerIndex, itemIndex) {
+  const seed = 500000 + containerIndex * 200 + itemIndex;
+  const sourceType = itemIndex % 2 === 0 ? 'company' : 'campus';
+  const sourcePool = ANONYMOUS_SOURCE_POOLS[sourceType];
+  const source = seededPick(sourcePool, seed + 1);
+  const category = seededPick(CATEGORIES, seed + 2);
+  const topic = resolveTrendTopic(community.topicId, seed + 3);
+
+  const titlePrefix = containerType === 'page' ? 'Page Spill' : 'Group Spill';
+  const body = [
+    `${containerType === 'page' ? 'Page context' : 'Group context'}: ${community.name}.`,
+    `Trend topic: ${topic.label} (${topic.focus}).`,
+    `${seededPick(COMMUNITY_STORY_LINES, seed + 4)}.`,
+    `Fake reference: ${seededPick(MOCK_FAKE_REFERENCES, seed + 5)}.`,
+    `Source blend: ${sourceType === 'company' ? 'Company employees anonymous circle' : 'Campus anonymous circle'}.`,
+    'Mock content notice: fictional, anonymous, and generated for seeding only.'
+  ].join('\n\n');
+
+  return {
+    id: `mock-${containerType}-${community.id}-${String(itemIndex + 1).padStart(2, '0')}`,
+    userId: null,
+    title: `${titlePrefix}: ${topic.label} #${itemIndex + 1}`,
+    body,
+    category: category.id,
+    collegeId: source.id,
+    collegeName: source.name,
+    department: sourceType === 'company' ? 'Anonymous Team' : 'Anonymous Department',
+    section: sourceType === 'company' ? 'Confidential Shift' : 'Anonymous Year',
+    sourceType,
+    sourceLabel: source.name,
+    alias: buildMockAlias(seed + 6),
+    aliasEmoji: seededPick(ALIAS_EMOJIS, seed + 7),
+    mediaUrls: [],
+    reactions: {
+      sip: seededInt(seed + 8, 12, 260),
+      fire: seededInt(seed + 9, 8, 210),
+      shook: seededInt(seed + 10, 4, 130),
+      dead: seededInt(seed + 11, 2, 100),
+      cap: seededInt(seed + 12, 0, 70)
+    },
+    comments: buildMockComments(seed + 13),
+    timeAgo: buildTimeAgo(seed + 14),
+    selfDestruct: seed % 17 === 0,
+    createdAt: Date.now() - seededInt(seed + 15, 1, 60) * 3600000,
+    ...(containerType === 'page' ? { pageId: community.id } : { groupId: community.id })
+  };
+}
+
+function buildCommunitySpills(pages, groups) {
+  const spills = [];
+
+  pages.forEach((page, pageIndex) => {
+    for (let i = 0; i < COMMUNITY_ITEMS_PER_CONTAINER; i++) {
+      spills.push(buildCommunitySpill('page', page, pageIndex, i));
+    }
+  });
+
+  groups.forEach((group, groupIndex) => {
+    for (let i = 0; i < COMMUNITY_ITEMS_PER_CONTAINER; i++) {
+      spills.push(buildCommunitySpill('group', group, groupIndex + pages.length, i));
+    }
+  });
+
+  return spills;
+}
+
 // Mock spills (seeded data for the experience)
 // Includes 50 spills in each category with fully fake/anonymous details.
 const MOCK_SPILLS = buildMockSpills();
 
 // Mock pages data
-const MOCK_PAGES = [];
+const MOCK_PAGES = buildMockPages();
 
 // Mock groups data
-const MOCK_GROUPS = [];
+const MOCK_GROUPS = buildMockGroups();
 
 // Mock channels data
-const MOCK_CHANNELS = [];
+const MOCK_CHANNELS = buildMockChannels();
+
+// Seed page and group community spills (20 each) into global mock feed.
+MOCK_SPILLS.push(...buildCommunitySpills(MOCK_PAGES, MOCK_GROUPS));
