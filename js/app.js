@@ -73,6 +73,18 @@ const App = {
           Storage.saveUser(mergedLocal, true);
         }
 
+        // Connect to Realtime Notifications
+        if (window.API && API.subscribeToLiveNotifications) {
+          API.subscribeToLiveNotifications(session.user.id, (notification) => {
+            if (typeof Utils !== 'undefined' && Utils.toast) {
+              Utils.toast(`🔔 \${notification.title}: \${notification.body}`, 'success');
+            }
+          });
+        }
+        
+        // Register Native Push Notifications if returning to a wrapped Mobile App
+        this._setupCapacitorPush();
+
         // Start sync in background so first screen cannot be blocked by network stalls.
         this._syncSpillsFromCloudWithTimeout();
 
@@ -108,6 +120,66 @@ const App = {
         this._enterApp('verified');
       }
     }, 1800);
+  },
+
+  /* ═══════════════════════════════════════════
+     PUSH NOTIFICATIONS (CAPACITOR)
+     ═══════════════════════════════════════════ */
+
+  async _setupCapacitorPush() {
+    try {
+      const cap = window.Capacitor;
+      if (!cap || !cap.isNativePlatform() || cap.getPlatform() === 'web') return;
+
+      // Make sure the PushNotifications plugin is loaded
+      const { PushNotifications } = cap.Plugins;
+      if (!PushNotifications) return;
+
+      // Ask user for permission
+      let permStatus = await PushNotifications.checkPermissions();
+      if (permStatus.receive === 'prompt') {
+        permStatus = await PushNotifications.requestPermissions();
+      }
+
+      if (permStatus.receive !== 'granted') {
+        console.warn('User denied push notification permissions');
+        return;
+      }
+
+      // Register device for Push Notification Token
+      await PushNotifications.register();
+
+      // Listen for registration success
+      PushNotifications.addListener('registration', async (token) => {
+        console.log('[Push] Registration Token:', token.value);
+        if (window.API && API.registerPushToken) {
+          await API.registerPushToken(token.value);
+        }
+      });
+
+      // Listen for registration errors
+      PushNotifications.addListener('registrationError', (error) => {
+        console.error('[Push] Registration error:', error.error);
+      });
+
+      // Listen for a push notification received while app is open
+      PushNotifications.addListener('pushNotificationReceived', (notification) => {
+        console.log('[Push] Received push in foreground:', notification);
+        if (typeof Utils !== 'undefined' && Utils.toast) {
+          // Realtime via Websocket usually also fires, but this is guaranteed fallback for FCM.
+          // Utils.toast(`🔔 ${notification.title}: ${notification.body}`, 'success');
+        }
+      });
+
+      // Listen for push notification tapped/clicked
+      PushNotifications.addListener('pushNotificationActionPerformed', (notification) => {
+        console.log('[Push] Notification action performed:', notification.actionId, notification.inputValue);
+        // Add navigation logic if `notification.notification.data.action_url` exists.
+      });
+
+    } catch (e) {
+      console.warn('[App] Push notifications setup aborted (not native or feature missing):', e);
+    }
   },
 
   /* ═══════════════════════════════════════════
@@ -536,6 +608,38 @@ const App = {
         if (shareModal) shareModal.classList.add('hidden');
       }
     });
+
+    // Native Hardware Back Button (Capacitor)
+    if (window.Capacitor && window.Capacitor.Plugins && window.Capacitor.Plugins.App) {
+      window.Capacitor.Plugins.App.addListener('backButton', () => {
+        // 1) Close modals first
+        const spillModal = document.getElementById('spill-composer');
+        if (spillModal && !spillModal.classList.contains('hidden')) {
+          Spill.close();
+          return;
+        }
+        const reportModal = document.getElementById('report-modal');
+        if (reportModal && !reportModal.classList.contains('hidden')) {
+          reportModal.classList.add('hidden');
+          return;
+        }
+        const shareModal = document.getElementById('share-modal');
+        if (shareModal && !shareModal.classList.contains('hidden')) {
+          shareModal.classList.add('hidden');
+          return;
+        }
+
+        // 2) Handle Navigation history
+        if (this.history && this.history.length > 0) {
+          this.goBack();
+        } else if (this.currentPage && this.currentPage !== 'feed') {
+          this.navigate('feed', null, { skipHistory: true });
+        } else {
+          // 3) Exit app if at root feed
+          window.Capacitor.Plugins.App.exitApp();
+        }
+      });
+    }
   },
 
   _startLiveSyncLoop() {

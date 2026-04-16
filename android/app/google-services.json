@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "161651608661",
+    "project_id": "spillwise",
+    "storage_bucket": "spillwise.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:161651608661:android:0ef9b283e05804408558dc",
+        "android_client_info": {
+          "package_name": "com.teaspill.app"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAugN2LV6Mnsq9rz9eiStJc-FybZtNct6M"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

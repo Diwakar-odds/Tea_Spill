@@ -210,6 +210,34 @@ const API = {
     return data.user.id;
   },
 
+  /* ─── Notifications ─── */
+
+  async registerPushToken(token) {
+    if (!this.isLive || !this.client) return;
+    const userId = await this.getCurrentUserId();
+    if (!userId) return;
+    try {
+      // Upsert the push token (Requires a 'user_push_tokens' table in DB to actually save this)
+      await this.client.from('user_push_tokens').upsert({ user_id: userId, token: token }, { onConflict: 'user_id' });
+      console.log('[API] Push token registered');
+    } catch (e) {
+      console.error('[API] Failed to register push token:', e);
+    }
+  },
+
+  subscribeToLiveNotifications(userId, callback) {
+    if (!this.isLive || !this.client) return;
+    this.client.channel('custom-notifications-channel')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'notifications', filter: `user_id=eq.${userId}` },
+        (payload) => {
+          callback(payload.new);
+        }
+      )
+      .subscribe();
+  },
+
   _normalizeUsername(value) {
     return String(value || '')
       .trim()
