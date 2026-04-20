@@ -9,6 +9,12 @@
 const Feed = {
   currentSort: 'trending',
   currentCategory: 'all',
+  activeReactionPickerSpillId: null,
+  activePostMenuSpillId: null,
+  _longPressTimer: null,
+  _longPressTriggered: false,
+  _longPressSpillId: null,
+  _globalDismissBound: false,
 
   render() {
     const page = document.getElementById('page-feed');
@@ -87,7 +93,12 @@ const Feed = {
     const category = Utils.getCategory(spill.category);
     const temp = Utils.teaTemperature(spill.reactions);
     const user = Storage.getUser();
-    const myReactions = user.myReactions?.[spill.id] || [];
+    const currentReactionId = this._getMyReactionId(spill.id, user);
+    const currentReaction = this._getReactionMeta(currentReactionId);
+    const isSaved = Array.isArray(user.savedSpills) && user.savedSpills.includes(spill.id);
+    const isReported = Array.isArray(user.reportedSpills) && user.reportedSpills.includes(spill.id);
+    const isPickerOpen = this.activeReactionPickerSpillId === spill.id;
+    const isMenuOpen = this.activePostMenuSpillId === spill.id;
     const displayAlias = spill.alias || 'Tea User';
     const displayAvatar = spill.aliasEmoji || '👤';
     const mediaUrls = Array.isArray(spill.mediaUrls)
@@ -123,29 +134,76 @@ const Feed = {
           </div>
         ` : ''}
 
-        <div class="spill-card-footer" style="display:flex; justify-content:space-between; align-items:center;">
-          <div style="display:flex; gap:var(--space-sm)">
+        <div class="spill-card-footer" onclick="event.stopPropagation();">
+          <div class="reaction-summary-strip">
             ${REACTIONS.map(r => `
-              <button class="reaction-btn ${myReactions.includes(r.id) ? 'active' : ''}"
-                      data-reaction="${r.id}" data-spill="${spill.id}"
-                      onclick="event.stopPropagation(); Feed.react('${spill.id}','${r.id}')">
+              <span class="reaction-stat ${currentReactionId === r.id ? 'active' : ''}">
                 <span>${r.emoji}</span>
                 <span>${Utils.formatNumber(spill.reactions?.[r.id] || 0)}</span>
-              </button>
+              </span>
             `).join('')}
-            <button class="reaction-btn" onclick="event.stopPropagation(); App.navigate('reader', '${spill.id}')">
-              <span>💬</span>
-              <span>${spill.comments ? spill.comments.length : 0}</span>
+          </div>
+
+          <div class="post-action-row">
+            <button class="post-action-btn reaction-main-btn ${currentReactionId ? 'active' : ''}"
+                    data-action="react-primary"
+                    onmousedown="Feed.onReactionPressStart(event, '${spill.id}')"
+                    onmouseup="Feed.onReactionPressEnd()"
+                    onmouseleave="Feed.onReactionPressCancel()"
+                    ontouchstart="Feed.onReactionPressStart(event, '${spill.id}')"
+                    ontouchend="Feed.onReactionPressEnd()"
+                    ontouchcancel="Feed.onReactionPressCancel()"
+                    onclick="Feed.handleReactionTap(event, '${spill.id}')">
+              <span class="post-action-icon">${currentReaction ? currentReaction.emoji : '🤍'}</span>
+              <span>${currentReaction ? currentReaction.label : 'React'}</span>
+            </button>
+
+            <button class="post-action-btn" onclick="event.stopPropagation(); App.navigate('reader', '${spill.id}')">
+              <span class="post-action-icon">💬</span>
+              <span>Comment</span>
+            </button>
+
+            <button class="post-action-btn" onclick="Feed.shareSpill(event, '${spill.id}')">
+              <span class="post-action-icon">📤</span>
+              <span>Share</span>
+            </button>
+
+            <button class="post-action-btn post-action-more-btn ${isMenuOpen ? 'active' : ''}"
+                    data-action="open-more-menu"
+                    onclick="Feed.togglePostMenu(event, '${spill.id}')"
+                    aria-label="More actions">
+              <span class="post-action-icon">⋯</span>
             </button>
           </div>
+
+          <div class="reaction-picker ${isPickerOpen ? 'open' : ''}" onclick="event.stopPropagation();">
+            ${REACTIONS.map(r => `
+              <button class="reaction-picker-option ${currentReactionId === r.id ? 'active' : ''}"
+                      title="${Utils.escapeHtml(r.label)}"
+                      onclick="Feed.selectReaction(event, '${spill.id}', '${r.id}')">
+                <span>${r.emoji}</span>
+                <small>${Utils.escapeHtml(r.label)}</small>
+              </button>
+            `).join('')}
+          </div>
+
+          <div class="post-more-menu ${isMenuOpen ? 'open' : ''}" onclick="event.stopPropagation();">
+            <button onclick="event.stopPropagation(); App.navigate('reader', '${spill.id}')">Open Post</button>
+            <button onclick="Feed.toggleSaveSpill(event, '${spill.id}')">${isSaved ? 'Remove Bookmark' : 'Bookmark Post'}</button>
+            <button onclick="Feed.shareSpill(event, '${spill.id}')">Share Post</button>
+            <button onclick="Feed.reportSpill(event, '${spill.id}')" ${isReported ? 'disabled' : ''}>${isReported ? 'Reported' : 'Report Post'}</button>
+          </div>
+
           ${options.isOwner ? `
-            <button class="reaction-btn" style="color:var(--rose); background:rgba(244,63,94,0.1);" title="Delete" onclick="event.stopPropagation(); Profile.deleteSpill('${spill.id}')">
-              🗑️ Delete
-            </button>
+            <div class="post-owner-actions">
+              <button class="reaction-btn" style="color:var(--rose); background:rgba(244,63,94,0.1);" title="Delete" onclick="event.stopPropagation(); Profile.deleteSpill('${spill.id}')">
+                🗑️ Delete
+              </button>
+            </div>
           ` : ''}
-          
+
           ${(typeof window.App !== 'undefined' && App.isAdmin && !options.isOwner) ? `
-            <div style="display:flex; gap:var(--space-xs); margin-left:auto;">
+            <div class="post-owner-actions">
               <button class="reaction-btn" style="color:var(--rose); background:rgba(244,63,94,0.1);" title="Nuke Spill" onclick="event.stopPropagation(); Admin.nukeSpill('${spill.id}')">
                 🗑️ Nuke
               </button>
@@ -161,33 +219,72 @@ const Feed = {
     `;
   },
 
+  _getReactionMeta(reactionId) {
+    if (!reactionId) return null;
+    return REACTIONS.find(r => r.id === reactionId) || null;
+  },
+
+  _getMyReactionId(spillId, user = null) {
+    const sourceUser = user || Storage.getUser();
+    const raw = sourceUser && sourceUser.myReactions ? sourceUser.myReactions[spillId] : null;
+
+    if (Array.isArray(raw)) {
+      return raw.find(id => typeof id === 'string' && id.trim()) || null;
+    }
+
+    if (typeof raw === 'string' && raw.trim()) {
+      return raw;
+    }
+
+    return null;
+  },
+
+  _setMyReactionId(user, spillId, reactionId) {
+    if (!user.myReactions || typeof user.myReactions !== 'object') {
+      user.myReactions = {};
+    }
+
+    if (reactionId) {
+      user.myReactions[spillId] = reactionId;
+    } else {
+      delete user.myReactions[spillId];
+    }
+  },
+
   /**
    * Toggle a reaction on a spill.
    * @param {string} spillId
    * @param {string} reactionId
    */
-  async react(spillId, reactionId) {
+  async react(spillId, requestedReactionId = null) {
     if (typeof window.App !== 'undefined' && App.requireVerified && !App.requireVerified('react to spills')) {
       return;
     }
 
     const user = Storage.getUser();
-    if (!user.myReactions) user.myReactions = {};
-    if (!user.myReactions[spillId]) user.myReactions[spillId] = [];
-
-    if (user.myReactions[spillId].includes(reactionId)) {
-      Utils.toast('Reaction already added.', 'info');
-      return;
-    }
-
     const spills = Storage.getSpills();
     const spill = spills.find(s => s.id === spillId);
     if (!spill) return;
     if (!spill.reactions) spill.reactions = {};
 
+    const isValidReaction = !requestedReactionId || REACTIONS.some(r => r.id === requestedReactionId);
+    if (!isValidReaction) return;
+
+    const currentReactionId = this._getMyReactionId(spillId, user);
+    let nextReactionId = requestedReactionId;
+
+    // Tap on current reaction means undo.
+    if (nextReactionId && currentReactionId === nextReactionId) {
+      nextReactionId = null;
+    }
+
+    if (!nextReactionId && !currentReactionId) {
+      return;
+    }
+
     let cloudReactions = null;
     if (window.API && API.isLive) {
-      const reactionResult = await API.reactToSpill(spillId, reactionId);
+      const reactionResult = await API.reactToSpill(spillId, nextReactionId, currentReactionId);
       if (!reactionResult.ok) {
         Utils.toast('Failed to record reaction. Please try again.', 'error');
         return;
@@ -195,12 +292,29 @@ const Feed = {
       cloudReactions = reactionResult.reactions;
     }
 
-    user.myReactions[spillId].push(reactionId);
-    if (cloudReactions) spill.reactions = cloudReactions;
-    else spill.reactions[reactionId] = (spill.reactions[reactionId] || 0) + 1;
+    this._setMyReactionId(user, spillId, nextReactionId);
 
-    user.teaPoints += 1;
-    user.reactions += 1;
+    if (cloudReactions) spill.reactions = cloudReactions;
+    else {
+      if (currentReactionId) {
+        spill.reactions[currentReactionId] = Math.max((spill.reactions[currentReactionId] || 0) - 1, 0);
+      }
+      if (nextReactionId) {
+        spill.reactions[nextReactionId] = (spill.reactions[nextReactionId] || 0) + 1;
+      }
+    }
+
+    if (!currentReactionId && nextReactionId) {
+      user.teaPoints = (user.teaPoints || 0) + 1;
+      user.reactions = (user.reactions || 0) + 1;
+      Utils.toast('Reaction added.', 'success');
+    } else if (currentReactionId && !nextReactionId) {
+      user.teaPoints = Math.max((user.teaPoints || 0) - 1, 0);
+      user.reactions = Math.max((user.reactions || 0) - 1, 0);
+      Utils.toast('Reaction removed.', 'info');
+    } else {
+      Utils.toast('Reaction updated.', 'success');
+    }
 
     Storage.saveUser(user);
     Storage.saveSpills(spills);
@@ -209,7 +323,163 @@ const Feed = {
     if (document.getElementById('page-feed').classList.contains('active')) {
       this._renderSpills();
     }
-    App._updateSidebarProfile();
+    if (typeof App !== 'undefined' && App._updateSidebarProfile) {
+      App._updateSidebarProfile();
+    }
+  },
+
+  onReactionPressStart(event, spillId) {
+    if (event.type === 'mousedown' && event.button !== 0) return;
+    if (event.type.startsWith('touch') && event.cancelable) event.preventDefault();
+
+    this._longPressTriggered = false;
+    this._longPressSpillId = spillId;
+    clearTimeout(this._longPressTimer);
+
+    this._longPressTimer = setTimeout(() => {
+      this._longPressTriggered = true;
+      this.activePostMenuSpillId = null;
+      this.activeReactionPickerSpillId = spillId;
+      if (document.getElementById('page-feed').classList.contains('active')) {
+        this._renderSpills();
+      }
+    }, 420);
+  },
+
+  onReactionPressEnd() {
+    clearTimeout(this._longPressTimer);
+  },
+
+  onReactionPressCancel() {
+    clearTimeout(this._longPressTimer);
+  },
+
+  async handleReactionTap(event, spillId) {
+    event.stopPropagation();
+
+    if (this._longPressTriggered && this._longPressSpillId === spillId) {
+      this._longPressTriggered = false;
+      return;
+    }
+
+    this.activePostMenuSpillId = null;
+    this.activeReactionPickerSpillId = null;
+
+    const current = this._getMyReactionId(spillId);
+    const next = current ? null : 'sip';
+    await this.react(spillId, next);
+  },
+
+  async selectReaction(event, spillId, reactionId) {
+    event.stopPropagation();
+
+    this.activeReactionPickerSpillId = null;
+    this.activePostMenuSpillId = null;
+    await this.react(spillId, reactionId);
+  },
+
+  togglePostMenu(event, spillId) {
+    event.stopPropagation();
+
+    const isOpen = this.activePostMenuSpillId === spillId;
+    this.activeReactionPickerSpillId = null;
+    this.activePostMenuSpillId = isOpen ? null : spillId;
+
+    if (document.getElementById('page-feed').classList.contains('active')) {
+      this._renderSpills();
+    }
+  },
+
+  async shareSpill(event, spillId) {
+    event.stopPropagation();
+    this.activePostMenuSpillId = null;
+
+    const spills = Storage.getSpills();
+    const spill = spills.find(s => s.id === spillId);
+    if (!spill) return;
+
+    const college = Utils.getCollege(spill.collegeId);
+    const shareText = `☕ Tea Spill\n\n${spill.title}\n\n${spill.body.slice(0, 220)}${spill.body.length > 220 ? '...' : ''}\n\n— ${spill.alias || 'Tea User'}${college ? ' | ' + college.name : ''}`;
+
+    if (navigator.share) {
+      try {
+        await navigator.share({
+          title: spill.title || 'Tea Spill',
+          text: shareText
+        });
+        Utils.toast('Share sheet opened.', 'success');
+        if (document.getElementById('page-feed').classList.contains('active')) {
+          this._renderSpills();
+        }
+        return;
+      } catch (err) {
+        if (err && err.name === 'AbortError') {
+          if (document.getElementById('page-feed').classList.contains('active')) {
+            this._renderSpills();
+          }
+          return;
+        }
+      }
+    }
+
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      try {
+        await navigator.clipboard.writeText(shareText);
+        Utils.toast('Share text copied.', 'success');
+      } catch {
+        Utils.toast('Could not copy share text.', 'error');
+      }
+    } else {
+      Utils.toast('Share is not supported on this device.', 'error');
+    }
+
+    if (document.getElementById('page-feed').classList.contains('active')) {
+      this._renderSpills();
+    }
+  },
+
+  toggleSaveSpill(event, spillId) {
+    event.stopPropagation();
+
+    const user = Storage.getUser();
+    if (!Array.isArray(user.savedSpills)) user.savedSpills = [];
+
+    const idx = user.savedSpills.indexOf(spillId);
+    if (idx > -1) {
+      user.savedSpills.splice(idx, 1);
+      Utils.toast('Removed from saved.', 'info');
+    } else {
+      user.savedSpills.push(spillId);
+      Utils.toast('Saved for later.', 'success');
+    }
+
+    this.activePostMenuSpillId = null;
+    Storage.saveUser(user);
+
+    if (document.getElementById('page-feed').classList.contains('active')) {
+      this._renderSpills();
+    }
+  },
+
+  reportSpill(event, spillId) {
+    event.stopPropagation();
+    this.activePostMenuSpillId = null;
+
+    const user = Storage.getUser();
+    if (Array.isArray(user.reportedSpills) && user.reportedSpills.includes(spillId)) {
+      Utils.toast('You already reported this post.', 'info');
+      if (document.getElementById('page-feed').classList.contains('active')) {
+        this._renderSpills();
+      }
+      return;
+    }
+
+    App.navigate('reader', spillId);
+    setTimeout(() => {
+      if (typeof Reader !== 'undefined' && Reader.openReport) {
+        Reader.openReport();
+      }
+    }, 120);
   },
 
   _bindTabs() {
@@ -238,5 +508,31 @@ const Feed = {
         App.navigate('reader', card.dataset.spillId);
       });
     });
+
+    if (!this._globalDismissBound) {
+      document.addEventListener('click', (e) => {
+        let shouldRender = false;
+
+        const clickedPicker = e.target.closest('.reaction-picker');
+        const clickedReactTrigger = e.target.closest('[data-action="react-primary"]');
+        if (!clickedPicker && !clickedReactTrigger && this.activeReactionPickerSpillId) {
+          this.activeReactionPickerSpillId = null;
+          shouldRender = true;
+        }
+
+        const clickedMenu = e.target.closest('.post-more-menu');
+        const clickedMenuTrigger = e.target.closest('[data-action="open-more-menu"]');
+        if (!clickedMenu && !clickedMenuTrigger && this.activePostMenuSpillId) {
+          this.activePostMenuSpillId = null;
+          shouldRender = true;
+        }
+
+        if (shouldRender && document.getElementById('page-feed').classList.contains('active')) {
+          this._renderSpills();
+        }
+      });
+
+      this._globalDismissBound = true;
+    }
   }
 };

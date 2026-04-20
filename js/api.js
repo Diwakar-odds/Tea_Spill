@@ -699,7 +699,7 @@ const API = {
     }
   },
 
-  async reactToSpill(spillId, reactionId) {
+  async reactToSpill(spillId, reactionId = null, previousReactionId = null) {
     if (!this.isLive) return { ok: true, reactions: null };
 
     try {
@@ -708,7 +708,7 @@ const API = {
 
       const { data, error } = await this.client.rpc('set_spill_reaction', {
         p_spill_id: spillId,
-        p_reaction: reactionId
+        p_reaction: reactionId || null
       });
       if (error) throw error;
 
@@ -733,7 +733,14 @@ const API = {
             dead: 0,
             cap: 0
           };
-          currentReactions[reactionId] = (currentReactions[reactionId] || 0) + 1;
+
+          if (previousReactionId) {
+            currentReactions[previousReactionId] = Math.max((currentReactions[previousReactionId] || 0) - 1, 0);
+          }
+
+          if (reactionId) {
+            currentReactions[reactionId] = (currentReactions[reactionId] || 0) + 1;
+          }
 
           const { error: pushErr } = await this.client
             .from('spills')

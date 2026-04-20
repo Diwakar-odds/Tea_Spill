@@ -131,16 +131,32 @@ const Utils = {
   toast(message, type = 'info') {
     const container = document.getElementById('toast-container');
     if (!container) return;
-    const toast = document.createElement('div');
-    toast.className = `toast ${type}`;
+
+    const toastKey = `${type}:${String(message).trim()}`;
+    let toast = Array.from(container.children).find(node => node.dataset.toastKey === toastKey);
+
+    if (!toast) {
+      toast = document.createElement('div');
+      toast.className = `toast ${type}`;
+      toast.dataset.toastKey = toastKey;
+      container.appendChild(toast);
+    }
+
     toast.textContent = message;
-    container.appendChild(toast);
-    setTimeout(() => {
-      toast.style.opacity = '0';
-      toast.style.transform = 'translateX(20px)';
-      toast.style.transition = 'all 0.3s ease';
-      setTimeout(() => toast.remove(), 300);
-    }, 3000);
+    toast.classList.remove('is-hiding');
+    toast.style.opacity = '1';
+    toast.style.transform = 'translateY(0)';
+
+    if (toast._dismissTimer) {
+      clearTimeout(toast._dismissTimer);
+    }
+
+    toast._dismissTimer = setTimeout(() => {
+      toast.classList.add('is-hiding');
+      setTimeout(() => {
+        if (toast && toast.parentElement) toast.remove();
+      }, 260);
+    }, 2400);
   },
 
   showToast(message, type = 'info') {

@@ -8,8 +8,17 @@
 
 const Reader = {
   currentSpillId: null,
+  reactionPickerOpen: false,
+  moreMenuOpen: false,
+  _longPressTimer: null,
+  _longPressTriggered: false,
+  _outsideDismissBound: false,
 
   async render(spillId) {
+    if (this.currentSpillId !== spillId) {
+      this.reactionPickerOpen = false;
+      this.moreMenuOpen = false;
+    }
     this.currentSpillId = spillId;
     const spills = Storage.getSpills();
     const spill = spills.find(s => s.id === spillId);
@@ -34,9 +43,10 @@ const Reader = {
       ? spill.mediaUrls.filter(u => typeof u === 'string' && (/^https?:\/\//i.test(u) || /^blob:/i.test(u)))
       : [];
     const user = Storage.getUser();
-    const myReactions = user.myReactions?.[spill.id] || [];
-    const isSaved = user.savedSpills.includes(spill.id);
-    const isReported = user.reportedSpills?.includes(spill.id);
+    const currentReactionId = Feed._getMyReactionId(spill.id, user);
+    const currentReaction = Feed._getReactionMeta(currentReactionId);
+    const isSaved = Array.isArray(user.savedSpills) && user.savedSpills.includes(spill.id);
+    const isReported = Array.isArray(user.reportedSpills) && user.reportedSpills.includes(spill.id);
     const canInteract = !(window.App && App.isReadOnly && App.isReadOnly());
     const page = document.getElementById('page-reader');
 
@@ -72,26 +82,66 @@ const Reader = {
         ` : ''}
 
         <!-- Action Bar -->
-        <div class="reader-actions" style="display:flex;gap:var(--space-md);padding:var(--space-lg) 0;border-top:1px solid var(--border-subtle);border-bottom:1px solid var(--border-subtle);margin:var(--space-xl) 0;flex-wrap:wrap">
-          ${REACTIONS.map(r => `
-            <button class="reaction-btn ${myReactions.includes(r.id) ? 'active' : ''}"
-                    onclick="Reader.react('${r.id}')" ${canInteract ? '' : 'disabled'}>
-              <span>${r.emoji}</span>
-              <span>${Utils.formatNumber(spill.reactions[r.id] || 0)}</span>
+        <div class="reader-actions">
+          <div class="reaction-summary-strip">
+            ${REACTIONS.map(r => `
+              <span class="reaction-stat ${currentReactionId === r.id ? 'active' : ''}">
+                <span>${r.emoji}</span>
+                <span>${Utils.formatNumber(spill.reactions?.[r.id] || 0)}</span>
+              </span>
+            `).join('')}
+          </div>
+
+          <div class="post-action-row">
+            <button class="post-action-btn reaction-main-btn ${currentReactionId ? 'active' : ''}"
+                    data-action="reader-react-primary"
+                    onmousedown="Reader.onReactionPressStart(event)"
+                    onmouseup="Reader.onReactionPressEnd()"
+                    onmouseleave="Reader.onReactionPressCancel()"
+                    ontouchstart="Reader.onReactionPressStart(event)"
+                    ontouchend="Reader.onReactionPressEnd()"
+                    ontouchcancel="Reader.onReactionPressCancel()"
+                    onclick="Reader.handleReactionTap(event)"
+                    ${canInteract ? '' : 'disabled'}>
+              <span class="post-action-icon">${currentReaction ? currentReaction.emoji : '🤍'}</span>
+              <span>${currentReaction ? currentReaction.label : 'React'}</span>
             </button>
-          `).join('')}
 
-          <div style="flex:1"></div>
+            <button class="post-action-btn" onclick="Reader.focusCommentInput()">
+              <span class="post-action-icon">💬</span>
+              <span>Comments (${cloudComments.length})</span>
+            </button>
 
-          <button class="btn-icon" onclick="Reader.toggleSave()" title="${isSaved ? 'Unsave' : 'Save'}" style="${isSaved ? 'color:var(--amber);border-color:var(--amber)' : ''}">
-            ${isSaved ? '🔖' : '📌'}
-          </button>
-          <button class="btn-icon" onclick="Reader.shareCard()" title="Share">
-            📤
-          </button>
-          <button class="btn-icon" onclick="Reader.openReport()" title="Report" ${isReported ? 'disabled style="opacity:0.4"' : ''}>
-            ${isReported ? '✅' : '🚩'}
-          </button>
+            <button class="post-action-btn" onclick="Reader.shareCard()">
+              <span class="post-action-icon">📤</span>
+              <span>Share</span>
+            </button>
+
+            <button class="post-action-btn post-action-more-btn ${this.moreMenuOpen ? 'active' : ''}"
+                    data-action="reader-open-more"
+                    onclick="Reader.toggleMoreMenu(event)"
+                    aria-label="More actions">
+              <span class="post-action-icon">⋯</span>
+            </button>
+          </div>
+
+          <div class="reaction-picker ${this.reactionPickerOpen ? 'open' : ''}" onclick="event.stopPropagation();">
+            ${REACTIONS.map(r => `
+              <button class="reaction-picker-option ${currentReactionId === r.id ? 'active' : ''}"
+                      title="${Utils.escapeHtml(r.label)}"
+                      onclick="Reader.selectReaction(event, '${r.id}')"
+                      ${canInteract ? '' : 'disabled'}>
+                <span>${r.emoji}</span>
+                <small>${Utils.escapeHtml(r.label)}</small>
+              </button>
+            `).join('')}
+          </div>
+
+          <div class="post-more-menu ${this.moreMenuOpen ? 'open' : ''}" onclick="event.stopPropagation();">
+            <button onclick="Reader.toggleSaveFromMenu(event)">${isSaved ? 'Remove Bookmark' : 'Bookmark Post'}</button>
+            <button onclick="Reader.shareCardFromMenu(event)">Share Post</button>
+            <button onclick="Reader.openReportFromMenu(event)" ${isReported ? 'disabled' : ''}>${isReported ? 'Reported' : 'Report Post'}</button>
+          </div>
         </div>
 
         <!-- Comments -->
@@ -153,12 +203,139 @@ const Reader = {
         </div>
       </div>
     `;
+
+    this._bindOutsideDismiss();
+    this._syncActionUi();
   },
 
-  react(reactionId) {
+  async react(reactionId = null) {
     if (!this.currentSpillId) return;
-    Feed.react(this.currentSpillId, reactionId);
-    this.render(this.currentSpillId);
+    await Feed.react(this.currentSpillId, reactionId);
+    this.reactionPickerOpen = false;
+    this.moreMenuOpen = false;
+    await this.render(this.currentSpillId);
+  },
+
+  onReactionPressStart(event) {
+    if (event.type === 'mousedown' && event.button !== 0) return;
+    if (event.type.startsWith('touch') && event.cancelable) event.preventDefault();
+
+    this._longPressTriggered = false;
+    clearTimeout(this._longPressTimer);
+
+    this._longPressTimer = setTimeout(() => {
+      this._longPressTriggered = true;
+      this.reactionPickerOpen = true;
+      this.moreMenuOpen = false;
+      this._syncActionUi();
+    }, 420);
+  },
+
+  onReactionPressEnd() {
+    clearTimeout(this._longPressTimer);
+  },
+
+  onReactionPressCancel() {
+    clearTimeout(this._longPressTimer);
+  },
+
+  async handleReactionTap(event) {
+    event.stopPropagation();
+    if (!this.currentSpillId) return;
+
+    if (this._longPressTriggered) {
+      this._longPressTriggered = false;
+      return;
+    }
+
+    const current = Feed._getMyReactionId(this.currentSpillId, Storage.getUser());
+    const next = current ? null : 'sip';
+    await this.react(next);
+  },
+
+  async selectReaction(event, reactionId) {
+    event.stopPropagation();
+    await this.react(reactionId);
+  },
+
+  toggleMoreMenu(event) {
+    event.stopPropagation();
+    this.reactionPickerOpen = false;
+    this.moreMenuOpen = !this.moreMenuOpen;
+    this._syncActionUi();
+  },
+
+  toggleSaveFromMenu(event) {
+    event.stopPropagation();
+    this.moreMenuOpen = false;
+    this.toggleSave();
+  },
+
+  shareCardFromMenu(event) {
+    event.stopPropagation();
+    this.moreMenuOpen = false;
+    this._syncActionUi();
+    this.shareCard();
+  },
+
+  openReportFromMenu(event) {
+    event.stopPropagation();
+    this.moreMenuOpen = false;
+    this._syncActionUi();
+    this.openReport();
+  },
+
+  focusCommentInput() {
+    const input = document.getElementById('comment-input');
+    if (!input) return;
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    input.focus();
+  },
+
+  _syncActionUi() {
+    const pageReader = document.getElementById('page-reader');
+    if (!pageReader || !pageReader.classList.contains('active')) return;
+
+    const picker = pageReader.querySelector('.reaction-picker');
+    if (picker) picker.classList.toggle('open', this.reactionPickerOpen);
+
+    const menu = pageReader.querySelector('.post-more-menu');
+    if (menu) menu.classList.toggle('open', this.moreMenuOpen);
+
+    const menuTrigger = pageReader.querySelector('[data-action="reader-open-more"]');
+    if (menuTrigger) menuTrigger.classList.toggle('active', this.moreMenuOpen);
+  },
+
+  _bindOutsideDismiss() {
+    if (this._outsideDismissBound) return;
+
+    document.addEventListener('click', (e) => {
+      if (!this.currentSpillId) return;
+      const pageReader = document.getElementById('page-reader');
+      if (!pageReader || !pageReader.classList.contains('active')) return;
+
+      let shouldRender = false;
+
+      const inPicker = e.target.closest('.reaction-picker');
+      const onPrimaryReaction = e.target.closest('[data-action="reader-react-primary"]');
+      if (!inPicker && !onPrimaryReaction && this.reactionPickerOpen) {
+        this.reactionPickerOpen = false;
+        shouldRender = true;
+      }
+
+      const inMenu = e.target.closest('.post-more-menu');
+      const onMenuTrigger = e.target.closest('[data-action="reader-open-more"]');
+      if (!inMenu && !onMenuTrigger && this.moreMenuOpen) {
+        this.moreMenuOpen = false;
+        shouldRender = true;
+      }
+
+      if (shouldRender) {
+        this._syncActionUi();
+      }
+    });
+
+    this._outsideDismissBound = true;
   },
 
   async addComment() {
@@ -196,6 +373,7 @@ const Reader = {
 
   toggleSave() {
     const user = Storage.getUser();
+    if (!Array.isArray(user.savedSpills)) user.savedSpills = [];
     const idx = user.savedSpills.indexOf(this.currentSpillId);
     if (idx > -1) {
       user.savedSpills.splice(idx, 1);
@@ -212,6 +390,9 @@ const Reader = {
   /* ─── Report ─── */
 
   openReport() {
+    this.moreMenuOpen = false;
+    this.reactionPickerOpen = false;
+    this._syncActionUi();
     document.getElementById('report-modal').classList.remove('hidden');
   },
 
