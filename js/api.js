@@ -61,13 +61,11 @@ const API = {
   async signInWithGoogle() {
     if (!this.isLive) {
       console.error('[API] Cannot sign in without Supabase connection. Missing runtime keys or blocked network.');
-      alert('Unable to connect to the cloud. Please check your internet connection or app configuration.');
       return false;
     }
 
     if (!this.GOOGLE_CLIENT_ID) {
       console.error('[API] Missing GOOGLE_CLIENT_ID runtime config.');
-      alert('Missing Google Client ID configuration.');
       return false;
     }
 
@@ -80,8 +78,10 @@ const API = {
     loginScreen.classList.remove('hidden');
     loginScreen.classList.add('visible');
 
-    // Render a universal Google sign-in button using Supabase OAuth
-    // This avoids popup blockers and Capacitor WebView issues common with Google Identity Services
+    // Detect if running inside Capacitor native shell
+    const cap = window.Capacitor;
+    const isNative = cap && cap.isNativePlatform && cap.isNativePlatform();
+
     loginScreen.innerHTML = `
       <div class="onboarding-card" style="text-align:center; padding: 40px 30px;">
         <div style="font-size:3rem;margin-bottom:12px">☕</div>
@@ -102,24 +102,100 @@ const API = {
 
         try {
           if (!this.client) throw new Error('Supabase client not initialized');
-          
-          // Use origin so redirect handles dev vs prod cleanly
-          // Append ?redirected=1 to track if we want (optional)
-          const redirectTo = `${window.location.origin}/app.html`;
-          const { data, error } = await this.client.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-              redirectTo,
-              skipBrowserRedirect: false // Important! We WANT to redirect the webview so it doesn't try a popup
-            }
-          });
 
-          if (error) throw error;
+          if (isNative) {
+            // ── NATIVE (Capacitor) ──
+            // Google blocks OAuth inside WebViews (403: disallowed_useragent).
+            // Open the OAuth URL in the system browser (Chrome Custom Tab) instead.
+            const redirectTo = 'com.teaspill.app://login-callback';
+            const { data, error } = await this.client.auth.signInWithOAuth({
+              provider: 'google',
+              options: {
+                redirectTo,
+                skipBrowserRedirect: true  // Get the URL, don't redirect the WebView
+              }
+            });
+            if (error) throw error;
+            if (data && data.url) {
+              // Open in system browser (Chrome Custom Tab)
+              if (cap.Plugins && cap.Plugins.Browser) {
+                await cap.Plugins.Browser.open({ url: data.url, windowName: '_system' });
+              } else {
+                // Fallback: open in default browser
+                window.open(data.url, '_system');
+              }
+            }
+          } else {
+            // ── WEB ──
+            // Standard redirect within the browser tab.
+            const redirectTo = window.location.origin + '/app.html';
+            const { data, error } = await this.client.auth.signInWithOAuth({
+              provider: 'google',
+              options: {
+                redirectTo,
+                skipBrowserRedirect: false
+              }
+            });
+            if (error) throw error;
+          }
         } catch (error) {
           console.error('[API] OAuth login failed:', error);
           oauthBtn.disabled = false;
           oauthBtn.innerHTML = 'Continue with Google';
-          alert('Failed to connect to Google. Please check your internet connection.');
+          if (typeof Utils !== 'undefined' && Utils.toast) {
+            Utils.toast('Failed to connect to Google. Check your connection.', 'error');
+          }
+        }
+      });
+    }
+
+    // ── NATIVE: Listen for deep link callback ──
+    // After Google auth, the system browser redirects to com.teaspill.app://login-callback#access_token=...
+    // The OS routes this back to our app via the intent filter.
+    if (isNative && cap.Plugins && cap.Plugins.App) {
+      cap.Plugins.App.addListener('appUrlOpen', async (event) => {
+        console.log('[API] Deep link received:', event.url);
+        if (event.url && event.url.startsWith('com.teaspill.app://login-callback')) {
+          // Close the system browser tab
+          try {
+            if (cap.Plugins.Browser) await cap.Plugins.Browser.close();
+          } catch (e) { /* ignore */ }
+
+          // Extract the tokens from the URL fragment
+          // Supabase appends tokens as hash: #access_token=...&refresh_token=...
+          const hashParams = new URLSearchParams(event.url.split('#')[1] || '');
+          const accessToken = hashParams.get('access_token');
+          const refreshToken = hashParams.get('refresh_token');
+
+          if (accessToken && refreshToken) {
+            try {
+              const { data, error } = await this.client.auth.setSession({
+                access_token: accessToken,
+                refresh_token: refreshToken
+              });
+              if (error) throw error;
+              console.log('[API] Session set from deep link callback.');
+              window.location.reload();
+            } catch (e) {
+              console.error('[API] Failed to set session from callback:', e);
+              if (typeof Utils !== 'undefined' && Utils.toast) {
+                Utils.toast('Authentication failed. Please try again.', 'error');
+              }
+              oauthBtn.disabled = false;
+              oauthBtn.innerHTML = 'Continue with Google';
+            }
+          } else {
+            console.warn('[API] Deep link callback missing tokens:', event.url);
+            // Might be an error callback — check for error param
+            const errorDesc = hashParams.get('error_description') || hashParams.get('error');
+            if (errorDesc) {
+              if (typeof Utils !== 'undefined' && Utils.toast) {
+                Utils.toast('Sign in failed: ' + errorDesc, 'error');
+              }
+            }
+            oauthBtn.disabled = false;
+            oauthBtn.innerHTML = 'Continue with Google';
+          }
         }
       });
     }
