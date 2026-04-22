@@ -123,10 +123,6 @@ const Storage = {
   getSpills() {
     const stored = this.get('spills');
     if (!stored || stored.length === 0) {
-      // In live mode, never inject mock data — wait for cloud sync to populate.
-      if (window.API && API.isLive) {
-        return [];
-      }
       this.set('spills', MOCK_SPILLS);
       return [...MOCK_SPILLS];
     }
