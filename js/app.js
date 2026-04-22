@@ -137,14 +137,17 @@ const App = {
         if (verif && verif.status === 'unverified') {
           this._showOnboarding();
         } else {
-          if (typeof Utils !== 'undefined' && Utils.toast) {
+          // Only grant 'verified' if the DB explicitly says so.
+          const confirmedStatus = (verif && verif.status) ? verif.status : 'pending';
+          if (confirmedStatus === 'verified' && typeof Utils !== 'undefined' && Utils.toast) {
             Utils.toast('Welcome back! Automatically signed in.', 'success');
           }
-          this._enterApp(verif && verif.status ? verif.status : 'verified');
+          this._enterApp(confirmedStatus);
         }
       } catch (error) {
         console.error('[App] Bootstrap error:', error);
-        this._enterApp('verified');
+        // NEVER grant verified on error — force re-login so status is properly checked.
+        this._showLoginRequiredScreen();
       }
     }, 1800);
   },
@@ -215,7 +218,7 @@ const App = {
 
   _showOnboarding() {
     const screen = document.getElementById('onboarding-screen');
-    if (!screen) { this._enterApp(); return; }
+    if (!screen) { this._enterApp('unverified'); return; }
 
     // Hide the main app chrome while onboarding
     document.getElementById('sidebar').style.display = 'none';
@@ -329,7 +332,7 @@ const App = {
      ENTER APP (post-onboarding)
      ═══════════════════════════════════════════ */
 
-  async _enterApp(status = 'verified') {
+  async _enterApp(status = 'pending') {
     this.verificationStatus = status;
 
     // Restore app chrome visibility
@@ -337,13 +340,12 @@ const App = {
     document.getElementById('main-content').style.display = '';
     document.getElementById('bottom-nav').style.display = '';
 
-    // Initialize user
+    // Initialize user — use profile alias from DB/session, never hardcode.
     const user = Storage.getUser();
     if (!user.alias) {
-      user.alias = 'Tea User';
       user.aliasEmoji = '👤';
     }
-    Storage.saveUser(user);
+    Storage.saveUser(user, true);
 
     // Initialize spill module
     try {
@@ -616,9 +618,9 @@ const App = {
     const avatarEl = document.getElementById('sidebar-avatar');
     const nameEl = document.getElementById('sidebar-username');
     const pointsEl = document.getElementById('sidebar-points');
-    if (avatarEl) avatarEl.textContent = user.aliasEmoji;
-    if (nameEl) nameEl.textContent = user.alias;
-    if (pointsEl) pointsEl.textContent = user.teaPoints + ' 🍵';
+    if (avatarEl) avatarEl.textContent = user.aliasEmoji || '👤';
+    if (nameEl) nameEl.textContent = user.alias || 'Anonymous';
+    if (pointsEl) pointsEl.textContent = (user.teaPoints || 0) + ' 🍵';
   },
 
   /** Bind global navigation events using event delegation. */

@@ -77,7 +77,7 @@ const Storage = {
 
   getUser() {
     return this.get('user') || {
-      alias: 'Tea User',
+      alias: null,
       aliasEmoji: '👤',
       teaPoints: 0,
       spills: 0,
