@@ -72,6 +72,9 @@ const API = {
     const loginScreen = document.getElementById('login-screen');
     if (!loginScreen) return false;
 
+    const cap = window.Capacitor;
+    const isNative = cap && cap.isNativePlatform && cap.isNativePlatform();
+
     document.getElementById('sidebar').style.display = 'none';
     document.getElementById('main-content').style.display = 'none';
     document.getElementById('bottom-nav').style.display = 'none';
@@ -90,6 +93,7 @@ const API = {
       </div>
     `;
 
+    const self = this;
     const oauthBtn = document.getElementById('oauth-google-btn');
     if (oauthBtn) {
       oauthBtn.addEventListener('click', async () => {
@@ -97,27 +101,76 @@ const API = {
         oauthBtn.innerHTML = 'Connecting... ☕';
 
         try {
-          if (!this.client) throw new Error('Supabase client not initialized');
+          if (!self.client) throw new Error('Supabase client not initialized');
 
-          // Redirect back to app.html after Google auth.
-          // Works in both web browser and Capacitor WebView
-          // (Capacitor config overrides user-agent to bypass Google's WebView block).
-          const redirectTo = window.location.origin + '/app.html';
-          const { data, error } = await this.client.auth.signInWithOAuth({
-            provider: 'google',
-            options: {
-              redirectTo,
-              skipBrowserRedirect: false
+          if (isNative) {
+            // NATIVE: Google blocks OAuth in WebViews (403 disallowed_useragent).
+            // Open in system browser (Chrome Custom Tab) and receive callback via deep link.
+            const redirectTo = 'com.teaspill.app://login-callback';
+            const { data, error } = await self.client.auth.signInWithOAuth({
+              provider: 'google',
+              options: { redirectTo, skipBrowserRedirect: true }
+            });
+            if (error) throw error;
+            if (data && data.url) {
+              if (cap.Plugins && cap.Plugins.Browser) {
+                await cap.Plugins.Browser.open({ url: data.url });
+              } else {
+                window.open(data.url, '_system');
+              }
             }
-          });
-
-          if (error) throw error;
+          } else {
+            // WEB: Standard redirect.
+            const redirectTo = window.location.origin + '/app.html';
+            const { data, error } = await self.client.auth.signInWithOAuth({
+              provider: 'google',
+              options: { redirectTo, skipBrowserRedirect: false }
+            });
+            if (error) throw error;
+          }
         } catch (error) {
           console.error('[API] OAuth login failed:', error);
           oauthBtn.disabled = false;
           oauthBtn.innerHTML = 'Continue with Google';
           if (typeof Utils !== 'undefined' && Utils.toast) {
             Utils.toast('Failed to connect to Google. Check your connection.', 'error');
+          }
+        }
+      });
+    }
+
+    // NATIVE: Listen for deep link callback after Google auth completes.
+    if (isNative && cap.Plugins && cap.Plugins.App) {
+      cap.Plugins.App.addListener('appUrlOpen', async (event) => {
+        if (!event.url || !event.url.startsWith('com.teaspill.app://login-callback')) return;
+        console.log('[API] OAuth deep link callback received');
+
+        try { if (cap.Plugins.Browser) await cap.Plugins.Browser.close(); } catch (e) {}
+
+        // Supabase appends tokens as URL fragment: #access_token=...&refresh_token=...
+        const hash = event.url.split('#')[1] || '';
+        const params = new URLSearchParams(hash);
+        const accessToken = params.get('access_token');
+        const refreshToken = params.get('refresh_token');
+
+        if (accessToken && refreshToken) {
+          const { error } = await self.client.auth.setSession({
+            access_token: accessToken,
+            refresh_token: refreshToken
+          });
+          if (error) {
+            console.error('[API] setSession failed:', error);
+            if (typeof Utils !== 'undefined' && Utils.toast) {
+              Utils.toast('Authentication failed. Try again.', 'error');
+            }
+          } else {
+            window.location.reload();
+          }
+        } else {
+          const errMsg = params.get('error_description') || params.get('error') || 'Unknown error';
+          console.warn('[API] OAuth callback error:', errMsg);
+          if (typeof Utils !== 'undefined' && Utils.toast) {
+            Utils.toast('Sign in failed: ' + errMsg, 'error');
           }
         }
       });
