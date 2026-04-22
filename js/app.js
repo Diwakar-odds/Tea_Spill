@@ -36,17 +36,44 @@ const App = {
         const splash = document.getElementById('splash-screen');
         if (splash) splash.classList.add('hidden');
 
-        const session = await API.getUserSession();
+        let session = await API.getUserSession();
+
+        // Validate the session is actually alive — WebView cookies can keep
+        // a stale session token that getSession() trusts but the server rejects.
+        if (session && API.client) {
+          try {
+            const { data, error } = await API.client.auth.getUser();
+            if (error || !data || !data.user) {
+              console.warn('[App] Session token is stale / revoked. Forcing re-login.');
+              session = null;
+              API.setSession(null);
+              // Clear the dead keys so they don't resurrect on next reload
+              const keysToRemove = [];
+              for (let i = 0; i < localStorage.length; i++) {
+                const key = localStorage.key(i);
+                if (key && (key.startsWith('sb-') || key.startsWith('teaspill_'))) {
+                  keysToRemove.push(key);
+                }
+              }
+              keysToRemove.forEach(k => localStorage.removeItem(k));
+            }
+          } catch (validationErr) {
+            console.warn('[App] Session validation failed:', validationErr);
+            session = null;
+            API.setSession(null);
+          }
+        }
+
         if (!session) {
-          // User isn't logged in, redirect them specifically to Google Auth
+          // User isn't logged in — show Google sign-in
           const googleLoginReady = await API.signInWithGoogle();
           if (!googleLoginReady) {
-            console.warn('[App] Google sign-in unavailable. Entering read-only mode to avoid blank screen.');
-            this._enterApp('pending');
-            if (typeof Utils !== 'undefined' && Utils.toast) {
-              Utils.toast('Google sign-in is temporarily unavailable in app. Running in read-only mode.', 'error');
-            }
+            // Sign-in could not even render (missing config, no Supabase connection).
+            // Show a blocking login-required screen instead of entering the app.
+            console.warn('[App] Google sign-in unavailable. Showing login-required screen.');
+            this._showLoginRequiredScreen();
           }
+          // Do NOT enter the app — stay on the login/login-required screen.
           return;
         }
         this.session = session;
@@ -397,6 +424,44 @@ const App = {
     `;
     this._showPage('feed');
     this._setActiveNav('feed');
+  },
+
+  /**
+   * Show a blocking "login required" screen when Google sign-in can't render.
+   * This prevents the app from entering with stale local data.
+   */
+  _showLoginRequiredScreen() {
+    const loginScreen = document.getElementById('login-screen');
+    document.getElementById('sidebar').style.display = 'none';
+    document.getElementById('main-content').style.display = 'none';
+    document.getElementById('bottom-nav').style.display = 'none';
+
+    if (loginScreen) {
+      loginScreen.classList.remove('hidden');
+      loginScreen.classList.add('visible');
+      loginScreen.innerHTML = `
+        <div class="onboarding-card" style="text-align:center; padding: 40px 30px;">
+          <div style="font-size:3rem;margin-bottom:12px">☕</div>
+          <h1 style="font-size:1.4rem;font-weight:900;margin-bottom:10px;background:var(--gradient-primary);-webkit-background-clip:text;-webkit-text-fill-color:transparent;">Sign In Required</h1>
+          <p style="color:var(--text-tertiary);font-size:0.9rem;margin-bottom:24px;">Unable to connect to the sign-in service. Please check your internet connection and try again.</p>
+          <button id="retry-login-btn" class="btn btn-primary btn-glow" style="padding: 12px 18px; width: 100%; border-radius: 20px; font-weight: 700; margin-bottom: 12px;">
+            🔄 Retry
+          </button>
+          <button id="clear-and-retry-btn" class="btn btn-ghost" style="padding: 10px 18px; width: 100%; font-size: 0.85rem; color: var(--text-tertiary);">
+            🗑️ Clear local data & retry
+          </button>
+        </div>
+      `;
+
+      document.getElementById('retry-login-btn')?.addEventListener('click', () => {
+        window.location.reload();
+      });
+      document.getElementById('clear-and-retry-btn')?.addEventListener('click', () => {
+        localStorage.clear();
+        sessionStorage.clear();
+        window.location.reload();
+      });
+    }
   },
 
   async _tryHybridHostedTakeover() {

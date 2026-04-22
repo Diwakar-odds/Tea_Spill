@@ -152,30 +152,50 @@ const API = {
 
   async signOut() {
     this.setSession(null);
-    if (!this.isLive) {
-      localStorage.removeItem('teaspill_sb_auth');
-      window.location.href = 'app.html';
-      return;
-    }
-    
-    // Attempt standard signout, but ignore errors if session is already invalid
-    try {
-      await this.client.auth.signOut();
-    } catch (e) {
-      console.warn('[API] Signout error ignored:', e);
-    }
-    
-    // Must clear local storage so localStorage caching doesn't restore on reload
-    if (typeof localStorage !== 'undefined') {
-      for (let i = 0; i < localStorage.length; i++) {
-        const key = localStorage.key(i);
-        if (key && key.startsWith('sb-')) {
-          localStorage.removeItem(key);
-        }
+
+    // 1. Server-side: revoke ALL sessions (scope: 'global') so even other
+    //    devices / WebView cookie jars are invalidated.
+    if (this.isLive && this.client) {
+      try {
+        await this.client.auth.signOut({ scope: 'global' });
+      } catch (e) {
+        console.warn('[API] Signout RPC error (ignored):', e);
       }
     }
-    
-    window.location.href = 'app.html';
+
+    // 2. Nuke every Supabase and app key from localStorage.
+    //    Iterate backwards so index shifting doesn't skip keys.
+    if (typeof localStorage !== 'undefined') {
+      const keysToRemove = [];
+      for (let i = 0; i < localStorage.length; i++) {
+        const key = localStorage.key(i);
+        if (key && (key.startsWith('sb-') || key.startsWith('teaspill_') || key.startsWith('ts_'))) {
+          keysToRemove.push(key);
+        }
+      }
+      keysToRemove.forEach(k => localStorage.removeItem(k));
+    }
+
+    // 3. Clear sessionStorage (hybrid takeover flags, etc.)
+    if (typeof sessionStorage !== 'undefined') {
+      sessionStorage.clear();
+    }
+
+    // 4. Capacitor WebView: clear cookies so the auth cookie jar is wiped.
+    try {
+      const cap = window.Capacitor;
+      if (cap && cap.isNativePlatform && cap.isNativePlatform()) {
+        // Capacitor HTTP plugin can clear cookies
+        if (cap.Plugins && cap.Plugins.CapacitorCookies) {
+          await cap.Plugins.CapacitorCookies.clearAllCookies();
+        }
+      }
+    } catch (e) {
+      console.warn('[API] Cookie clear skipped:', e);
+    }
+
+    // 5. Hard redirect — use replace() so the back button can't resurrect the old session.
+    window.location.replace(window.location.pathname || 'app.html');
   },
 
   async getUserSession() {

@@ -278,10 +278,20 @@ const Profile = {
   },
 
   clearData() {
-    if (confirm('Are you sure? This will delete ALL your spills, reactions, and profile data.')) {
+    if (confirm('Are you sure? This will delete ALL your spills, reactions, and profile data. You will be signed out.')) {
+      // Clear everything local first
       localStorage.clear();
-      Utils.toast('🗑️ All data cleared!', 'info');
-      location.reload();
+      sessionStorage.clear();
+      Utils.toast('🗑️ All data cleared! Signing out...', 'info');
+      // Delegate to API.signOut which revokes the cloud session,
+      // clears WebView cookies, and redirects to the login screen.
+      setTimeout(() => {
+        if (window.API && typeof API.signOut === 'function') {
+          API.signOut();
+        } else {
+          window.location.replace(window.location.pathname || 'app.html');
+        }
+      }, 600);
     }
   },
 
