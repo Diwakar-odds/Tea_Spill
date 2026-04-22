@@ -104,7 +104,7 @@ const App = {
         if (window.API && API.subscribeToLiveNotifications) {
           API.subscribeToLiveNotifications(session.user.id, (notification) => {
             if (typeof Utils !== 'undefined' && Utils.toast) {
-              Utils.toast(`🔔 \${notification.title}: \${notification.body}`, 'success');
+              Utils.toast(`🔔 ${notification.title}: ${notification.body}`, 'success');
             }
           });
         }

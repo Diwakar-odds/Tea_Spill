@@ -105,7 +105,7 @@ const API = {
           
           // Use origin so redirect handles dev vs prod cleanly
           // Append ?redirected=1 to track if we want (optional)
-          const redirectTo = \`\${window.location.origin}/app.html\`;
+          const redirectTo = `${window.location.origin}/app.html`;
           const { data, error } = await this.client.auth.signInWithOAuth({
             provider: 'google',
             options: {
