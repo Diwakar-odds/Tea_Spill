@@ -104,20 +104,47 @@ const API = {
           if (!self.client) throw new Error('Supabase client not initialized');
 
           if (isNative) {
-            // NATIVE: Google blocks OAuth in WebViews (403 disallowed_useragent).
-            // Open in system browser (Chrome Custom Tab) and receive callback via deep link.
-            const redirectTo = 'com.teaspill.app://login-callback';
-            const { data, error } = await self.client.auth.signInWithOAuth({
-              provider: 'google',
-              options: { redirectTo, skipBrowserRedirect: true }
-            });
-            if (error) throw error;
-            if (data && data.url) {
-              if (cap.Plugins && cap.Plugins.Browser) {
-                await cap.Plugins.Browser.open({ url: data.url });
+            // NATIVE: Use @capgo/capacitor-social-login for Native Google Sign-In
+            // Bypasses the Supabase redirect and displays "Spill Wise" properly in native UI
+            try {
+              const SocialLogin = cap.Plugins.SocialLogin;
+              if (SocialLogin) {
+                await SocialLogin.initialize({
+                  google: { webClientId: self.GOOGLE_CLIENT_ID }
+                });
+                
+                const { result } = await SocialLogin.login({
+                  provider: 'google',
+                  options: { scopes: ['email', 'profile'] }
+                });
+                
+                if (result && result.idToken) {
+                  // Pass the native ID token to Supabase
+                  const { error } = await self.client.auth.signInWithIdToken({
+                    provider: 'google',
+                    token: result.idToken
+                  });
+                  if (error) throw error;
+                  
+                  // Reload UI on success
+                  window.location.reload();
+                  return;
+                } else {
+                  throw new Error('No ID token received from Google');
+                }
               } else {
-                window.open(data.url, '_system');
+                console.warn('[API] SocialLogin plugin not found, falling back to Web OAuth');
+                // Fallback if plugin is not installed properly
+                const redirectTo = window.location.origin + '/app.html';
+                const { error } = await self.client.auth.signInWithOAuth({
+                  provider: 'google',
+                  options: { redirectTo, skipBrowserRedirect: false }
+                });
+                if (error) throw error;
               }
+            } catch (err) {
+              console.error('[API] Native Google login failed:', err);
+              throw err;
             }
           } else {
             // WEB: Standard redirect.
@@ -134,43 +161,6 @@ const API = {
           oauthBtn.innerHTML = 'Continue with Google';
           if (typeof Utils !== 'undefined' && Utils.toast) {
             Utils.toast('Failed to connect to Google. Check your connection.', 'error');
-          }
-        }
-      });
-    }
-
-    // NATIVE: Listen for deep link callback after Google auth completes.
-    if (isNative && cap.Plugins && cap.Plugins.App) {
-      cap.Plugins.App.addListener('appUrlOpen', async (event) => {
-        if (!event.url || !event.url.startsWith('com.teaspill.app://login-callback')) return;
-        console.log('[API] OAuth deep link callback received');
-
-        try { if (cap.Plugins.Browser) await cap.Plugins.Browser.close(); } catch (e) {}
-
-        // Supabase appends tokens as URL fragment: #access_token=...&refresh_token=...
-        const hash = event.url.split('#')[1] || '';
-        const params = new URLSearchParams(hash);
-        const accessToken = params.get('access_token');
-        const refreshToken = params.get('refresh_token');
-
-        if (accessToken && refreshToken) {
-          const { error } = await self.client.auth.setSession({
-            access_token: accessToken,
-            refresh_token: refreshToken
-          });
-          if (error) {
-            console.error('[API] setSession failed:', error);
-            if (typeof Utils !== 'undefined' && Utils.toast) {
-              Utils.toast('Authentication failed. Try again.', 'error');
-            }
-          } else {
-            window.location.reload();
-          }
-        } else {
-          const errMsg = params.get('error_description') || params.get('error') || 'Unknown error';
-          console.warn('[API] OAuth callback error:', errMsg);
-          if (typeof Utils !== 'undefined' && Utils.toast) {
-            Utils.toast('Sign in failed: ' + errMsg, 'error');
           }
         }
       });
