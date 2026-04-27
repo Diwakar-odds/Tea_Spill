@@ -1,9 +1,10 @@
+const isHosted = process.env.MOBILE_HOSTED === '1';
+
 const config = {
   appId: 'com.teaspill.app',
   appName: 'Spill Wise',
   webDir: 'dist-mobile',
   server: {
-    url: 'https://spill-wise.netlify.app/app.html',
     cleartext: false,
     allowNavigation: [
       'spill-wise.netlify.app',
@@ -12,9 +13,12 @@ const config = {
       'www.googleapis.com'
     ],
     // Override user-agent so Google OAuth doesn't block with 403 disallowed_useragent.
-    // Android WebView adds 'wv' to the UA string which Google detects and blocks.
     overrideUserAgent: 'Mozilla/5.0 (Linux; Android 14) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/125.0.0.0 Mobile Safari/537.36'
   }
 };
+
+if (isHosted) {
+  config.server.url = 'https://spill-wise.netlify.app/app.html';
+}
 
 module.exports = config;
